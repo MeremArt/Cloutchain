@@ -1,5 +1,5 @@
 "use client";
-
+import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 
@@ -173,10 +173,11 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         {/* Logo */}
         <Link href="/">
           <div className="mb-8">
-            <img
-              src="https://res.cloudinary.com/dtfvdjvyr/image/upload/v1735749093/pajj_x0kiv1.png"
-              alt="Logo"
-              className="w-8 h-8 rounded-full"
+            <Image
+              src="https://res.cloudinary.com/dtfvdjvyr/image/upload/v1740060892/Group_7_xmjgul.png"
+              alt="Menu icon"
+              width={34}
+              height={34}
             />
           </div>
         </Link>
