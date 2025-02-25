@@ -1,0 +1,105 @@
+import React from "react";
+
+const Logo = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="50"
+    height="64"
+    viewBox="0 0 60 74"
+    fill="none"
+  >
+    <rect x="29.9673" width="15.2893" height="15.9008" rx="2" fill="black" />
+    <rect
+      x="15.2896"
+      y="14.6779"
+      width="15.2893"
+      height="15.9008"
+      rx="2"
+      fill="black"
+    />
+    <rect
+      x="0.611572"
+      y="28.7441"
+      width="15.2893"
+      height="15.9008"
+      rx="2"
+      fill="black"
+    />
+    <rect
+      x="15.2896"
+      y="43.422"
+      width="15.2893"
+      height="15.9008"
+      rx="2"
+      fill="black"
+    />
+    <rect
+      x="29.3557"
+      y="58.0999"
+      width="15.2893"
+      height="15.9008"
+      rx="2"
+      fill="black"
+    />
+    <rect
+      x="44.0334"
+      y="43.422"
+      width="15.2893"
+      height="15.9008"
+      rx="2"
+      fill="black"
+    />
+    <rect
+      x="44.0334"
+      y="14.6779"
+      width="15.2893"
+      height="15.9008"
+      rx="2"
+      fill="black"
+    />
+    <rect
+      x="28.7441"
+      y="58.0999"
+      width="15.2893"
+      height="15.9008"
+      rx="2"
+      fill="#FFFD55"
+    />
+    <rect
+      x="43.4221"
+      y="43.422"
+      width="15.2893"
+      height="15.9008"
+      rx="2"
+      fill="#FFFD55"
+    />
+    <rect
+      x="14.6777"
+      y="43.422"
+      width="15.2893"
+      height="15.9008"
+      rx="2"
+      fill="#FFFD55"
+    />
+    <rect y="28.7441" width="15.2893" height="15.9008" rx="2" fill="#FFFD55" />
+    <rect
+      x="14.6777"
+      y="14.6779"
+      width="15.2893"
+      height="15.9008"
+      rx="2"
+      fill="#FFFD55"
+    />
+    <rect x="29.3557" width="15.2893" height="15.9008" rx="2" fill="#FFFD55" />
+    <rect
+      x="43.4221"
+      y="14.6779"
+      width="15.2893"
+      height="15.9008"
+      rx="2"
+      fill="#FFFD55"
+    />
+  </svg>
+);
+
+export default Logo;
