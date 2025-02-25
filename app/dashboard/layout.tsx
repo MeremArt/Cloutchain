@@ -16,7 +16,6 @@ import {
   Link as LinkIcon,
   Tag,
   BarChart,
-  Clock,
   DoorOpen,
   Gem,
 } from "lucide-react";
