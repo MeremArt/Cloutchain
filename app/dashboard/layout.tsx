@@ -5,8 +5,9 @@ import Link from "next/link";
 
 import React, { ReactNode, useEffect, useState } from "react";
 import {
-  Menu,
   X,
+  Menu,
+  Twitter,
   Loader,
   Home,
   User,
@@ -16,7 +17,7 @@ import {
   Tag,
   BarChart,
   Clock,
-  Building,
+  DoorOpen,
   Gem,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
@@ -42,7 +43,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const baseMenuItems = [
     { icon: Home, label: "Dashboard", href: "/dashboard" },
     { icon: User, label: "Profile", href: "/dashboard/profile" },
-    { icon: Building, label: "Bank account", href: "/dashboard/bankaccount" },
+    { icon: Twitter, label: "twiiter", href: "/dashboard/twitter" },
     { icon: Wallet, label: "Wallet", href: "/dashboard/wallet" },
     { icon: CreditCard, label: "Card", href: "/dashboard/card" },
     { icon: LinkIcon, label: "Referrals", href: "/dashboard/referrals" },
@@ -217,7 +218,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             className="flex flex-col items-center cursor-pointer pt-6"
           >
             <div className="p-2 bg-gray-800 hover:bg-red-600 rounded-lg transition-colors duration-200">
-              <Clock className="text-gray-400 hover:text-white w-5 h-5" />
+              <DoorOpen className="text-gray-400 hover:text-white w-5 h-5" />
             </div>
           </div>
         </div>

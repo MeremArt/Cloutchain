@@ -17,9 +17,7 @@ import { API_ENDPOINTS } from "@/app/config/api";
 
 export default function ProfilePage() {
   const [userData, setUserData] = useState<UserData | null>(null);
-
   const [balanceData, setBalanceData] = useState<BalanceData | null>(null);
-
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
 
   useEffect(() => {
@@ -30,12 +28,22 @@ export default function ProfilePage() {
   }, []);
 
   const fetchBalance = async () => {
+    if (!userData || !userData.phoneNumber) {
+      toast.error("Phone number not available");
+      return;
+    }
+
     setIsLoadingBalance(true);
     try {
-      const response = await fetch(API_ENDPOINTS.PROFILE.BALANCE);
+      // Include the user's phone number in the API request
+      const response = await fetch(
+        `${API_ENDPOINTS.PROFILE.BALANCE}${userData.phoneNumber}`
+      );
+
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
+
       const data: BalanceData = await response.json();
       setBalanceData(data);
     } catch (error) {
@@ -47,8 +55,12 @@ export default function ProfilePage() {
   };
 
   useEffect(() => {
-    fetchBalance();
-  }, []);
+    // Only fetch balance if userData is available
+    if (userData && userData.phoneNumber) {
+      fetchBalance();
+    }
+  }, [userData]); // This will re-run when userData becomes available
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold text-white mb-6">My Profile</h1>
@@ -61,12 +73,13 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center">
                 <DollarSign className="w-6 h-6 text-yellow-400 mr-2" />
-                <h3 className="text-lg font-semibold text-white">
+                <h3 className="text-lg font-semibold font-orbitron text-white">
                   Available Balance
                 </h3>
               </div>
               <button
                 className="p-2 hover:bg-gray-700 rounded-full transition-colors"
+                onClick={fetchBalance}
                 disabled={isLoadingBalance}
               >
                 <RefreshCw
@@ -76,7 +89,7 @@ export default function ProfilePage() {
                 />
               </button>
             </div>
-            <div className="text-3xl font-bold text-white">
+            <div className="text-3xl font-bold font-orbitron text-white">
               {balanceData ? balanceData.balances.sonic.toFixed(2) : "0.00"}{" "}
               $SONIC
             </div>
