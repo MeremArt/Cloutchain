@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from "react";
 
-import { SocialMediaCardProps } from "@/app/types/socialcard.types";
+interface SocialMediaCardProps {
+  platform: string;
+  color: string;
+  logo: React.ReactNode;
+  hexCode: string;
+  style: React.CSSProperties;
+}
 
 const SocialMediaCard = ({
   platform,
