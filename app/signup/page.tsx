@@ -15,7 +15,7 @@ export default function Register() {
     email: "",
     phoneNumber: "",
     password: "",
-    confirmPassword: "",
+
     twitterId: "",
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -35,9 +35,9 @@ export default function Register() {
     if (formData.password.length < 8) {
       return "Password must be at least 8 characters";
     }
-    if (formData.password !== formData.confirmPassword) {
-      return "Passwords do not match";
-    }
+    // if (formData.password !== formData.confirmPassword) {
+    //   return "Passwords do not match";
+    // }
     return null;
   };
 
@@ -138,7 +138,7 @@ export default function Register() {
         email: "",
         phoneNumber: "",
         password: "",
-        confirmPassword: "",
+
         twitterId: "",
       });
       setAgreeToTerms(false);
@@ -338,43 +338,6 @@ export default function Register() {
                 </p>
               </div>
 
-              {/* Twitter ID field (optional) */}
-              {/* <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Twitter ID{" "}
-                  <span className="text-gray-500 text-sm">(optional)</span>
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <svg
-                      className="h-5 w-5 text-gray-400"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <path
-                        d="M22 5.8a8.49 8.49 0 0 1-2.36.64 4.13 4.13 0 0 0 1.81-2.27 8.21 8.21 0 0 1-2.61 1 4.1 4.1 0 0 0-7 3.74 11.64 11.64 0 0 1-8.45-4.29 4.16 4.16 0 0 0-.55 2.07 4.09 4.09 0 0 0 1.82 3.41 4.05 4.05 0 0 1-1.86-.51v.05a4.1 4.1 0 0 0 3.3 4 3.93 3.93 0 0 1-1.1.17 4.9 4.9 0 0 1-.77-.07 4.11 4.11 0 0 0 3.83 2.84A8.22 8.22 0 0 1 3 18.34a7.93 7.93 0 0 1-1-.06 11.57 11.57 0 0 0 6.29 1.85A11.59 11.59 0 0 0 20 8.45v-.53a8.43 8.43 0 0 0 2-2.12z"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                  <input
-                    type="text"
-                    name="twitterId"
-                    placeholder="Enter your Twitter ID"
-                    value={formData.twitterId}
-                    onChange={handleInputChange}
-                    className="w-full p-3 pl-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-                    disabled={isLoading}
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Your Twitter handle without the @ symbol
-                </p>
-              </div> */}
-
               {/* Password field */}
               <div>
                 <label className="block text-gray-700 font-montserrat font-bold mb-2">
@@ -412,46 +375,6 @@ export default function Register() {
                   Must be at least 8 characters
                 </p>
               </div>
-
-              {/* Confirm Password field */}
-              {/* <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    name="confirmPassword"
-                    placeholder="Confirm your password"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    className="w-full p-3 pl-12 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-                    required
-                    disabled={isLoading}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 cursor-pointer p-1"
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-5 w-5" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
-                  </button>
-                </div>
-                {formData.password &&
-                  formData.confirmPassword &&
-                  formData.password !== formData.confirmPassword && (
-                    <p className="text-xs text-red-500 mt-1">
-                      Passwords do not match
-                    </p>
-                  )}
-              </div> */}
 
               {/* Terms and conditions */}
               <div className="flex items-start mt-4">
