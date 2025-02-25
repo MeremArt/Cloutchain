@@ -45,18 +45,18 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem("jwt");
+        // const token = localStorage.getItem("jwt");
         const storedUserData = localStorage.getItem("userData");
-        if (!token) {
-          toast.error("Please log in to continue", {
-            position: "top-right",
-            style: {
-              background: "#333",
-              color: "#fff",
-            },
-          });
-          router.push("/login");
-        }
+        // if (!token) {
+        //   toast.error("Please log in to continue", {
+        //     position: "top-right",
+        //     style: {
+        //       background: "#333",
+        //       color: "#fff",
+        //     },
+        //   });
+        //   router.push("/login");
+        // }
         if (storedUserData) {
           const parsedUserData = JSON.parse(storedUserData);
           setUserData(parsedUserData);
