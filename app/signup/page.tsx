@@ -88,6 +88,12 @@ export default function Register() {
     // Show loading toast
     const loadingToast = toast.loading("Creating your account...");
 
+    let twitterIdToSend: string | null = formData.twitterId;
+    if (!twitterIdToSend || twitterIdToSend.trim() === "") {
+      // Option 1: Send null instead of empty string
+      twitterIdToSend = null;
+    }
+
     try {
       const response = await fetch(API_ENDPOINTS.AUTH.SIGNUP, {
         method: "POST",
@@ -98,7 +104,7 @@ export default function Register() {
           email: formData.email,
           phoneNumber: formData.phoneNumber,
           password: formData.password,
-          twitterId: formData.twitterId || "",
+          twitterId: twitterIdToSend,
         }),
       });
 
