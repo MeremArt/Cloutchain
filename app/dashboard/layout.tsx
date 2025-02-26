@@ -149,7 +149,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         >
           {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
-        <span className="ml-4 text-white font-semibold">paj.cash</span>
+        <span className="ml-4 text-white font-semibold">Cloutchain</span>
       </div>
 
       {/* New Slim Sidebar */}
