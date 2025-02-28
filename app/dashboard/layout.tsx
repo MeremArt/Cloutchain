@@ -43,7 +43,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { icon: Home, label: "Dashboard", href: "/dashboard" },
     { icon: User, label: "Profile", href: "/dashboard/profile" },
     { icon: Twitter, label: "twiiter", href: "/dashboard/twitter" },
-    { icon: Wallet, label: "Wallet", href: "/dashboard/wallet" },
+    { icon: Wallet, label: "Wallet", href: "/dashboard/submit" },
     { icon: CreditCard, label: "Card", href: "/dashboard/card" },
     { icon: LinkIcon, label: "Referrals", href: "/dashboard/referrals" },
     { icon: Tag, label: "Tx pool", href: "/dashboard/pool" },

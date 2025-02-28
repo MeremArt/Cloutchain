@@ -13,10 +13,8 @@ export default function Register() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     email: "",
-    phoneNumber: "",
+    tiktokUsername: "",
     password: "",
-
-    twitterId: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -41,13 +39,13 @@ export default function Register() {
     return null;
   };
 
-  const validatePhoneNumber = () => {
-    const phoneRegex = /^\+?[0-9]{10,15}$/;
-    if (!phoneRegex.test(formData.phoneNumber)) {
-      return "Please enter a valid phone number";
-    }
-    return null;
-  };
+  // const validatePhoneNumber = () => {
+  //   const phoneRegex = /^\+?[0-9]{10,15}$/;
+  //   if (!phoneRegex.test(formData.tiktokUsername)) {
+  //     return "Please enter a valid phone number";
+  //   }
+  //   return null;
+  // };
 
   const validateEmail = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -67,11 +65,11 @@ export default function Register() {
       return;
     }
 
-    const phoneError = validatePhoneNumber();
-    if (phoneError) {
-      toast.error(phoneError);
-      return;
-    }
+    // const phoneError = validatePhoneNumber();
+    // if (phoneError) {
+    //   toast.error(phoneError);
+    //   return;
+    // }
 
     const passwordError = validatePassword();
     if (passwordError) {
@@ -88,11 +86,11 @@ export default function Register() {
     // Show loading toast
     const loadingToast = toast.loading("Creating your account...");
 
-    let twitterIdToSend: string | null = formData.twitterId;
-    if (!twitterIdToSend || twitterIdToSend.trim() === "") {
-      // Option 1: Send null instead of empty string
-      twitterIdToSend = null;
-    }
+    // let twitterIdToSend: string | null = formData.twitterId;
+    // if (!twitterIdToSend || twitterIdToSend.trim() === "") {
+    //   // Option 1: Send null instead of empty string
+    //   twitterIdToSend = null;
+    // }
 
     try {
       const response = await fetch(API_ENDPOINTS.AUTH.SIGNUP, {
@@ -102,9 +100,8 @@ export default function Register() {
         },
         body: JSON.stringify({
           email: formData.email,
-          phoneNumber: formData.phoneNumber,
+          tiktokUsername: formData.tiktokUsername,
           password: formData.password,
-          twitterId: twitterIdToSend,
         }),
       });
 
@@ -142,10 +139,8 @@ export default function Register() {
       router.push("/dashboard");
       setFormData({
         email: "",
-        phoneNumber: "",
+        tiktokUsername: "",
         password: "",
-
-        twitterId: "",
       });
       setAgreeToTerms(false);
 
@@ -322,17 +317,17 @@ export default function Register() {
               {/* Phone number field */}
               <div>
                 <label className="block text-gray-700 font-montserrat font-bold mb-2">
-                  Phone Number
+                  Tiktok Username
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <Phone className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
-                    type="tel"
-                    name="phoneNumber"
-                    placeholder="Enter your phone number"
-                    value={formData.phoneNumber}
+                    type="text"
+                    name="tiktokUsername"
+                    placeholder="Enter your TikTok username"
+                    value={formData.tiktokUsername}
                     onChange={handleInputChange}
                     className="w-full p-3 pl-12 border font-montserrat border-gray-300 text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                     required

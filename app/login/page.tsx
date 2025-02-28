@@ -15,7 +15,7 @@ import { API_ENDPOINTS } from "../config/api";
 export default function Login() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    phoneNumber: "",
+    tiktokUsername: "",
     password: "",
   });
 
@@ -39,11 +39,11 @@ export default function Login() {
 
     try {
       const response = await axios.post(API_ENDPOINTS.AUTH.LOGIN, {
-        phoneNumber: formData.phoneNumber,
+        tiktokUsername: formData.tiktokUsername,
         password: formData.password,
       });
       console.log("Sending login request with payload:", {
-        phoneNumber: formData.phoneNumber,
+        tiktokUsername: formData.tiktokUsername,
         password: "[REDACTED]",
       });
 
@@ -55,7 +55,7 @@ export default function Login() {
 
       // Debug logging
       console.log("Sending login request with payload:", {
-        phoneNumber: formData.phoneNumber,
+        tiktokUsername: formData.tiktokUsername,
         password: "[REDACTED]",
       });
       // Store the JWT in local storage
@@ -72,9 +72,8 @@ export default function Login() {
         JSON.stringify({
           id: responseData.user.id,
           email: responseData.user.email,
-          phoneNumber: responseData.user.phoneNumber,
+          tiktokUsername: responseData.user.tiktokUsername,
           walletAddress: responseData.user.walletAddress,
-          twitterId: responseData.user.twitterId || "",
         })
       );
 
@@ -89,7 +88,7 @@ export default function Login() {
       });
 
       setFormData({
-        phoneNumber: "",
+        tiktokUsername: "",
         password: "",
       });
 
@@ -181,17 +180,17 @@ export default function Login() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-gray-700 font-montserrat font-bold mb-2">
-                  Phone number
+                  Tiktok Username
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <User className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
-                    type="tel"
-                    name="phoneNumber"
-                    placeholder="Enter your phone number"
-                    value={formData.phoneNumber}
+                    type="text"
+                    name="tiktokUsername"
+                    placeholder="Enter your TikTok username"
+                    value={formData.tiktokUsername}
                     onChange={handleInputChange}
                     className="w-full p-3 pl-12 border font-montserrat text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                     required
@@ -225,10 +224,11 @@ export default function Login() {
                     placeholder="Enter your password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="w-full p-4 pl-12 pr-12 border font-montserrat border-gray-300 text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    className="w-full p-3 pl-12 border font-montserrat text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                     required
                     disabled={isLoading}
                   />
+
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}

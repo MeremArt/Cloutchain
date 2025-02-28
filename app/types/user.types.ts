@@ -1,9 +1,8 @@
 export interface UserData {
   id: string;
   email: string;
-  phoneNumber: string;
+  tiktokUsername: string;
   walletAddress: string;
-  twitterId: string;
 }
 
 export interface HeaderProps {

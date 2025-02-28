@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   User,
   Mail,
   Phone,
   Wallet,
-  Twitter,
   DollarSign,
   RefreshCw,
+  Gift,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { UserData } from "@/app/types/user.types";
@@ -27,8 +27,8 @@ export default function ProfilePage() {
     }
   }, []);
 
-  const fetchBalance = async () => {
-    if (!userData || !userData.phoneNumber) {
+  const fetchBalance = useCallback(async () => {
+    if (!userData || !userData.tiktokUsername) {
       toast.error("Phone number not available");
       return;
     }
@@ -37,7 +37,7 @@ export default function ProfilePage() {
     try {
       // Include the user's phone number in the API request
       const response = await fetch(
-        `${API_ENDPOINTS.PROFILE.BALANCE}${userData.phoneNumber}`
+        `${API_ENDPOINTS.PROFILE.BALANCE}${userData.tiktokUsername}`
       );
 
       if (!response.ok) {
@@ -52,14 +52,23 @@ export default function ProfilePage() {
     } finally {
       setIsLoadingBalance(false);
     }
-  };
+  }, [userData]);
 
   useEffect(() => {
     // Only fetch balance if userData is available
-    if (userData && userData.phoneNumber) {
+    if (userData && userData.tiktokUsername) {
       fetchBalance();
     }
-  }, [userData]); // This will re-run when userData becomes available
+  }, [fetchBalance, userData]); // This will re-run when userData becomes available
+
+  const copySonicLink = () => {
+    if (userData) {
+      // Create your custom Sonic link format using the user ID
+      const sonicLink = `http://localhost:3000/gift?id=${userData.tiktokUsername}`;
+      navigator.clipboard.writeText(sonicLink);
+      toast.success("Sonic gift link copied!");
+    }
+  };
 
   return (
     <div className="p-6">
@@ -103,9 +112,7 @@ export default function ProfilePage() {
                 Pending Balance
               </h3>
             </div>
-            <div className="text-3xl font-bold text-white">
-              {/* ${balanceData.pendingBalance.toFixed(2)} */}
-            </div>
+            <div className="text-3xl font-bold text-white">{0}</div>
           </div>
         </div>
 
@@ -121,11 +128,20 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <h2 className="text-xl font-semibold text-white">
-                      {userData.twitterId || "No Twitter ID"}
+                      {/* {userData.twitterId || "No Twitter ID"} */}
                     </h2>
-                    <p className="text-gray-400 text-sm">
-                      User ID: {userData.id}
-                    </p>
+                    <div className="flex items-center space-x-2">
+                      <p className="text-gray-400 text-sm">
+                        User ID: {userData.id}
+                      </p>
+                    </div>
+                    <button
+                      onClick={copySonicLink}
+                      className="flex items-center mt-2 text-yellow-400 hover:text-yellow-300 transition-colors text-sm bg-gray-700 px-2 py-1 rounded"
+                    >
+                      <Gift className="w-4 h-4 mr-1" />
+                      <span>Copy Sonic Gift Link</span>
+                    </button>
                   </div>
                 </div>
 
@@ -147,8 +163,8 @@ export default function ProfilePage() {
                     <div className="flex items-center">
                       <Phone className="w-5 h-5 text-yellow-400 mr-3" />
                       <div>
-                        <p className="text-sm text-gray-400">Phone Number</p>
-                        <p className="text-white">{userData.phoneNumber}</p>
+                        <p className="text-sm text-gray-400">Tiktok Username</p>
+                        <p className="text-white">{userData.tiktokUsername}</p>
                       </div>
                     </div>
                   </div>
@@ -174,19 +190,6 @@ export default function ProfilePage() {
                         >
                           Copy full address
                         </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Twitter */}
-                  <div className="p-4 bg-gray-700 rounded-lg">
-                    <div className="flex items-center">
-                      <Twitter className="w-5 h-5 text-yellow-400 mr-3" />
-                      <div>
-                        <p className="text-sm text-gray-400">Twitter ID</p>
-                        <p className="text-white">
-                          {userData.twitterId || "Not connected"}
-                        </p>
                       </div>
                     </div>
                   </div>
