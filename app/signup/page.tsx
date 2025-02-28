@@ -3,7 +3,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 
-import { API_ENDPOINTS } from "../config/api";
+import { API_ENDPOINTS } from "../../config/api";
 import Link from "next/link";
 import toast, { Toaster } from "react-hot-toast";
 import { Eye, EyeOff, Lock, Mail, Phone } from "lucide-react";

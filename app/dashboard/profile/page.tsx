@@ -13,7 +13,7 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import { UserData } from "@/app/types/user.types";
 import { BalanceData } from "@/app/types/user.types";
-import { API_ENDPOINTS } from "@/app/config/api";
+import { API_ENDPOINTS } from "../../../config/api";
 
 export default function ProfilePage() {
   const [userData, setUserData] = useState<UserData | null>(null);

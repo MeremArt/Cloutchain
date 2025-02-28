@@ -10,7 +10,7 @@ import { Eye, EyeOff, Lock, User } from "lucide-react";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import LoadingSpinner from "../components/LoadingSpinner/LoadingSpinner";
 import Image from "next/image";
-import { API_ENDPOINTS } from "../config/api";
+import { API_ENDPOINTS } from "../../config/api";
 
 export default function Login() {
   const router = useRouter();

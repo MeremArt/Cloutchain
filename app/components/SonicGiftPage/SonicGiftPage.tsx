@@ -2,18 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-  Wallet,
-  DollarSign,
-  QrCode,
-  Send,
-  Gift,
-  ArrowLeft,
-  Copy,
-} from "lucide-react";
+import { Wallet, DollarSign, QrCode, Send, Gift, Copy } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import Link from "next/link";
-import { API_ENDPOINTS } from "@/app/config/api";
+import { API_ENDPOINTS } from "../../../config/api";
 
 interface BalanceData {
   balances: {
@@ -200,7 +192,7 @@ export default function SonicGiftPage() {
             {/* Recipient Card */}
             <div className="bg-gray-800 rounded-xl p-6 shadow-lg mb-8">
               <h2 className="text-xl font-semibold mb-4 text-center">
-                Send $SONIC to
+                Gift $SONIC to
               </h2>
 
               <div className="flex items-center justify-center mb-6">
