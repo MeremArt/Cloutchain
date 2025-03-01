@@ -64,7 +64,7 @@ export default function ProfilePage() {
   const copySonicLink = () => {
     if (userData) {
       // Create your custom Sonic link format using the user ID
-      const sonicLink = `http://localhost:3000/gift?id=${userData.tiktokUsername}`;
+      const sonicLink = `https://www.cloutchain.xyz//gift?id=${userData.tiktokUsername}`;
       navigator.clipboard.writeText(sonicLink);
       toast.success("Sonic gift link copied!");
     }

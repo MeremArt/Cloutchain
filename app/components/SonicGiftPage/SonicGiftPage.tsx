@@ -2,10 +2,30 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { Wallet, DollarSign, QrCode, Send, Gift, Copy } from "lucide-react";
+import {
+  useAppKit,
+  useAppKitAccount,
+  useAppKitProvider,
+} from "@reown/appkit/react";
+import {
+  Wallet,
+  DollarSign,
+  QrCode,
+  Send,
+  Gift,
+  Copy,
+  ArrowLeft,
+} from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import Link from "next/link";
 import { API_ENDPOINTS } from "../../../config/api";
+import { Provider } from "@reown/appkit-adapter-solana/react";
+import QRCode from "react-qr-code";
+import {
+  createTransferInstruction,
+  getAssociatedTokenAddress,
+} from "@solana/spl-token";
+import { Connection, PublicKey, Transaction } from "@solana/web3.js";
 
 interface BalanceData {
   balances: {
@@ -21,17 +41,31 @@ interface UserData {
   email?: string;
 }
 
+// Sonic token mint address on Solana (replace with actual token mint address)
+const SONIC_TOKEN_MINT = new PublicKey(
+  "SonicxvLud67EceaEzCLRnMTBqzYUUYNr93DBkBdDES"
+); // Example SPL token mint
+const SOLANA_RPC_URL =
+  "https://dry-misty-surf.solana-mainnet.quiknode.pro/3f5a226933e73f33db5ce840c220268713b4419f";
+
 export default function SonicGiftPage() {
   const searchParams = useSearchParams();
   const tiktokUsername = searchParams.get("id");
 
+  // AppKit hooks
+  const { open } = useAppKit();
+  const { address, isConnected } = useAppKitAccount();
+  const { walletProvider } = useAppKitProvider<Provider>("solana");
+
   const [userData, setUserData] = useState<UserData | null>(null);
   const [balanceData, setBalanceData] = useState<BalanceData | null>(null);
   const [amount, setAmount] = useState("10");
-  const [walletConnected, setWalletConnected] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingUserData, setIsLoadingUserData] = useState(true);
+  const [transactionSignature, setTransactionSignature] = useState<
+    string | null
+  >(null);
 
   // Predefined amounts for quick selection
   const predefinedAmounts = ["5", "10", "25", "50", "100", "Custom"];
@@ -91,23 +125,16 @@ export default function SonicGiftPage() {
   };
 
   const handleConnectWallet = async () => {
-    setIsLoading(true);
     try {
-      // In reality, this would use Solana wallet adapter
-      // For demo purposes, we'll simulate a connection
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      setWalletConnected(true);
-      toast.success("Wallet connected successfully!");
+      open();
     } catch (error) {
-      console.error("Error connecting wallet:", error);
-      toast.error("Failed to connect wallet");
-    } finally {
-      setIsLoading(false);
+      console.error("Error opening AppKit:", error);
+      toast.error("Failed to open wallet connection dialog");
     }
   };
 
   const handleSendSonic = async () => {
-    if (!walletConnected) {
+    if (!isConnected || !address || !walletProvider) {
       toast.error("Please connect your wallet first");
       return;
     }
@@ -117,19 +144,78 @@ export default function SonicGiftPage() {
       return;
     }
 
+    const amountValue = parseFloat(amount);
+    if (isNaN(amountValue) || amountValue <= 0) {
+      toast.error("Please enter a valid amount");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // In reality, this would initiate a Solana transaction
-      // For demo purposes, we'll simulate a transaction
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const connection = new Connection(SOLANA_RPC_URL);
+
+      // Convert amount to lamports (or the token's smallest unit)
+      // Assuming 9 decimals for SPL tokens - adjust if SONIC has different decimals
+      const amountInSmallestUnit = amountValue * Math.pow(10, 9);
+
+      // Get sender and recipient token account addresses
+      const senderPublicKey = new PublicKey(address);
+      const recipientPublicKey = new PublicKey(userData.walletAddress);
+
+      const senderTokenAccount = await getAssociatedTokenAddress(
+        SONIC_TOKEN_MINT,
+        senderPublicKey
+      );
+
+      const recipientTokenAccount = await getAssociatedTokenAddress(
+        SONIC_TOKEN_MINT,
+        recipientPublicKey
+      );
+
+      // Create transfer instruction
+      const transferInstruction = createTransferInstruction(
+        senderTokenAccount,
+        recipientTokenAccount,
+        senderPublicKey,
+        BigInt(Math.floor(amountInSmallestUnit))
+      );
+
+      // Create transaction and add the transfer instruction
+      const transaction = new Transaction().add(transferInstruction);
+
+      // Get recent blockhash
+      const { blockhash } = await connection.getLatestBlockhash();
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = senderPublicKey;
+
+      // Sign and send transaction using AppKit wallet provider
+      const signedTransaction = await walletProvider.signTransaction(
+        transaction
+      );
+      const signature = await connection.sendRawTransaction(
+        signedTransaction.serialize()
+      );
+
+      // Wait for confirmation (optional)
+      await connection.confirmTransaction(signature, "confirmed");
+
+      // Save transaction signature for reference
+      setTransactionSignature(signature);
+
       toast.success(
         `Successfully sent ${amount} $SONIC to @${userData.tiktokUsername}!`
       );
+
       // Reset amount after successful send
       setAmount("10");
+
+      // Refresh recipient's balance after sending
+      await fetchBalance(userData.tiktokUsername);
     } catch (error) {
       console.error("Error sending SONIC:", error);
-      toast.error("Transaction failed");
+      toast.error(
+        error instanceof Error ? error.message : "Transaction failed"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -142,23 +228,45 @@ export default function SonicGiftPage() {
     }
   };
 
+  const handleCopyTransactionSignature = () => {
+    if (transactionSignature) {
+      navigator.clipboard.writeText(transactionSignature);
+      toast.success("Transaction signature copied!");
+    }
+  };
+
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Allow only numbers and decimal point
     const value = e.target.value.replace(/[^0-9.]/g, "");
     setAmount(value);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const generateQrValue = () => {
     if (!userData) return "";
     // Format as Solana Pay URL
     // Reference: https://docs.solanapay.com/spec
-    return `solana:${userData.walletAddress}?amount=${amount}&spl-token=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&reference=${userData.id}&label=Sonic%20Gift&message=Gift%20for%20${userData.tiktokUsername}`;
+    return `solana:${
+      userData.walletAddress
+    }?amount=${amount}&spl-token=${SONIC_TOKEN_MINT.toString()}&reference=${
+      userData.id
+    }&label=Sonic%20Gift&message=Gift%20for%20${userData.tiktokUsername}`;
   };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
+      <header className="bg-gray-800 p-4 shadow-md">
+        <div className="container mx-auto flex items-center justify-between">
+          <Link href="/" className="flex items-center">
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            <span className="font-bold text-xl">Back to Home</span>
+          </Link>
+          <div className="flex items-center">
+            <Gift className="w-6 h-6 text-yellow-400 mr-2" />
+            <h1 className="text-xl font-bold">SONIC Gift</h1>
+          </div>
+        </div>
+      </header>
 
       <main className="container mx-auto p-6 max-w-2xl">
         {!tiktokUsername ? (
@@ -234,6 +342,34 @@ export default function SonicGiftPage() {
               )}
             </div>
 
+            {/* Wallet Status */}
+            <div className="bg-gray-800 rounded-xl p-4 shadow-lg mb-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Wallet className="w-5 h-5 text-yellow-400 mr-2" />
+                  <span className="text-sm">Wallet Status:</span>
+                </div>
+                <div className="flex items-center">
+                  <span
+                    className={`inline-block w-2 h-2 rounded-full mr-2 ${
+                      isConnected ? "bg-green-500" : "bg-red-500"
+                    }`}
+                  ></span>
+                  <span className="text-sm">
+                    {isConnected ? "Connected" : "Not Connected"}
+                  </span>
+                </div>
+              </div>
+
+              {isConnected && address && (
+                <div className="mt-2 text-xs text-gray-400 flex items-center justify-between">
+                  <span className="font-mono">
+                    {address.slice(0, 10)}...{address.slice(-6)}
+                  </span>
+                </div>
+              )}
+            </div>
+
             {/* Amount Selection */}
             {!showQR && (
               <div className="bg-gray-800 rounded-xl p-6 shadow-lg mb-8">
@@ -290,7 +426,7 @@ export default function SonicGiftPage() {
 
                   <button
                     onClick={
-                      walletConnected ? handleSendSonic : handleConnectWallet
+                      isConnected ? handleSendSonic : handleConnectWallet
                     }
                     disabled={isLoading}
                     className="flex items-center justify-center py-3 px-4 bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -299,7 +435,7 @@ export default function SonicGiftPage() {
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
                     ) : (
                       <>
-                        {walletConnected ? (
+                        {isConnected ? (
                           <>
                             <Send className="w-5 h-5 mr-2" />
                             Send $SONIC
@@ -325,12 +461,11 @@ export default function SonicGiftPage() {
                 </h3>
 
                 <div className="bg-white p-4 rounded-lg inline-block mb-6">
-                  {/* In a real app, use a QR code library like react-qr-code */}
-                  <div className="w-64 h-64 mx-auto bg-gray-200 flex items-center justify-center">
-                    <QrCode className="w-48 h-48 text-gray-800" />
-                    {/* This is a placeholder. In production, use:
-                    <QRCode value={generateQrValue()} size={256} /> */}
-                  </div>
+                  <QRCode
+                    value={generateQrValue()}
+                    size={256}
+                    className="w-64 h-64"
+                  />
                 </div>
 
                 <div className="mb-6">
@@ -354,6 +489,80 @@ export default function SonicGiftPage() {
                 >
                   Back to payment options
                 </button>
+              </div>
+            )}
+
+            {/* Transaction Receipt (shown after successful transaction) */}
+            {transactionSignature && (
+              <div className="bg-gray-800 rounded-xl p-6 shadow-lg mb-8 mt-8">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="bg-green-900 rounded-full p-3">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-8 w-8 text-green-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                </div>
+
+                <h3 className="text-lg font-medium text-center mb-2">
+                  Transaction Successful
+                </h3>
+                <p className="text-gray-400 text-center mb-4">
+                  Your donation of {amount} $SONIC has been sent successfully!
+                </p>
+
+                <div className="bg-gray-700 p-3 rounded-lg mb-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-400">Transaction:</span>
+                    <div className="flex items-center">
+                      <span className="text-sm font-mono text-gray-300 truncate max-w-xs">
+                        {transactionSignature.slice(0, 10)}...
+                        {transactionSignature.slice(-6)}
+                      </span>
+                      <button
+                        onClick={handleCopyTransactionSignature}
+                        className="ml-2 text-yellow-400 hover:text-yellow-300"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-center">
+                  <a
+                    href={`https://explorer.solana.com/tx/${transactionSignature}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-yellow-400 hover:text-yellow-300 flex items-center text-sm"
+                  >
+                    <span>View on Solana Explorer</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 ml-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
+                    </svg>
+                  </a>
+                </div>
               </div>
             )}
           </>

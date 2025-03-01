@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Nunito, Orbitron, Montserrat } from "next/font/google";
 import "./globals.css";
+import ContextProvider from "@/context";
 
 const nunito = Nunito({
   subsets: ["latin"],
@@ -55,7 +56,7 @@ export default function RootLayout({
       <body
         className={`${nunito.className} ${orbitron.className}  ${montserrat.className} antialiased`}
       >
-        {children}
+        <ContextProvider>{children}</ContextProvider>
       </body>
     </html>
   );
