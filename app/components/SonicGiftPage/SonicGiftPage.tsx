@@ -37,7 +37,9 @@ interface UserData {
 const SONIC_TOKEN_MINT = new PublicKey(
   "SonicxvLud67EceaEzCLRnMTBqzYUUYNr93DBkBdDES"
 ); // Example SPL token mint
-const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || "";
+const SOLANA_RPC_URL =
+  process.env.SOLANA_RPC_URL ||
+  "https://dry-misty-surf.solana-mainnet.quiknode.pro/3f5a226933e73f33db5ce840c220268713b4419f";
 
 export default function SonicGiftPage() {
   const searchParams = useSearchParams();
