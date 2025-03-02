@@ -37,7 +37,7 @@ interface UserData {
 const SONIC_TOKEN_MINT = new PublicKey(
   "SonicxvLud67EceaEzCLRnMTBqzYUUYNr93DBkBdDES"
 ); // Example SPL token mint
-const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL;
+const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || "";
 
 export default function SonicGiftPage() {
   const searchParams = useSearchParams();
@@ -143,6 +143,9 @@ export default function SonicGiftPage() {
 
     setIsLoading(true);
     try {
+      if (!SOLANA_RPC_URL) {
+        throw new Error("SOLANA_RPC_URL is not defined");
+      }
       const connection = new Connection(SOLANA_RPC_URL);
 
       // Convert amount to lamports (or the token's smallest unit)

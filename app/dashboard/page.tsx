@@ -151,7 +151,7 @@ const page = () => {
                       </span>
                     </div>
                     <button className="bg-yellow-400 text-gray-900 px-3 py-1 rounded-full font-medium hover:bg-yellow-300 transition-colors">
-                      Bet Now
+                      View
                     </button>
                   </div>
                 </div>
