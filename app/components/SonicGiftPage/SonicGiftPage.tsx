@@ -7,15 +7,7 @@ import {
   useAppKitAccount,
   useAppKitProvider,
 } from "@reown/appkit/react";
-import {
-  Wallet,
-  DollarSign,
-  QrCode,
-  Send,
-  Gift,
-  Copy,
-  ArrowLeft,
-} from "lucide-react";
+import { Wallet, DollarSign, QrCode, Send, Gift, Copy } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import Link from "next/link";
 import { API_ENDPOINTS } from "../../../config/api";
@@ -255,7 +247,7 @@ export default function SonicGiftPage() {
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
-      <header className="bg-gray-800 p-4 shadow-md">
+      {/* <header className="bg-gray-800 p-4 shadow-md">
         <div className="container mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center">
             <ArrowLeft className="w-5 h-5 mr-2" />
@@ -266,7 +258,7 @@ export default function SonicGiftPage() {
             <h1 className="text-xl font-bold">SONIC Gift</h1>
           </div>
         </div>
-      </header>
+      </header> */}
 
       <main className="container mx-auto p-6 max-w-2xl">
         {!tiktokUsername ? (

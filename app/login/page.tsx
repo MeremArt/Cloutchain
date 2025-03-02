@@ -94,7 +94,7 @@ export default function Login() {
 
       // Small delay for better UX
       setTimeout(() => {
-        router.push("/dashboard");
+        router.push("/dashboard/profile");
       }, 500);
     } catch (error) {
       // Dismiss loading toast and show error

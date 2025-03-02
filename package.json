@@ -11,6 +11,7 @@
   "dependencies": {
     "@metaplex-foundation/js": "^0.20.1",
     "@project-serum/anchor": "^0.26.0",
+    "@pythnetwork/hermes-client": "^2.0.0",
     "@reown/appkit-adapter-solana": "^1.6.9",
     "@reown/appkit-adapter-wagmi": "^1.6.9",
     "@reown/walletkit": "^1.2.1",
