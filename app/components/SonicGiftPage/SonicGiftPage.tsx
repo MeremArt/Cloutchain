@@ -39,6 +39,7 @@ export default function SonicGiftPage() {
 
   // AppKit hooks
   const { publicKey, connected, wallet, signTransaction } = useWallet();
+  const [sentAmount, setSentAmount] = useState("");
   const { initiateDeepLink } = useWalletDeepLink();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -140,6 +141,8 @@ export default function SonicGiftPage() {
 
     setIsLoading(true);
     try {
+      setSentAmount(amount);
+
       if (!SOLANA_RPC_URL) {
         throw new Error("SOLANA_RPC_URL is not defined");
       }
@@ -247,18 +250,6 @@ export default function SonicGiftPage() {
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
-      {/* <header className="bg-gray-800 p-4 shadow-md">
-        <div className="container mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center">
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            <span className="font-bold text-xl">Back to Home</span>
-          </Link>
-          <div className="flex items-center">
-            <Gift className="w-6 h-6 text-yellow-400 mr-2" />
-            <h1 className="text-xl font-bold">SONIC Gift</h1>
-          </div>
-        </div>
-      </header> */}
 
       <main className="container mx-auto p-6 max-w-2xl">
         {!tiktokUsername ? (
@@ -509,7 +500,7 @@ export default function SonicGiftPage() {
                   Transaction Successful
                 </h3>
                 <p className="text-gray-400 text-center mb-4">
-                  Your donation of {amount} $SONIC has been sent successfully!
+                  Your gift of {sentAmount} $SONIC has been sent successfully!
                 </p>
 
                 <div className="bg-gray-700 p-3 rounded-lg mb-4">
