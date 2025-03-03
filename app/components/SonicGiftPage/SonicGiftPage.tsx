@@ -2,35 +2,27 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-  useAppKit,
-  useAppKitAccount,
-  useAppKitProvider,
-} from "@reown/appkit/react";
+import useWalletDeepLink from "../DeepLink/DeepLink";
+
+import { useWallet } from "@solana/wallet-adapter-react";
 import { Wallet, DollarSign, QrCode, Send, Gift, Copy } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import Link from "next/link";
 import { API_ENDPOINTS } from "../../../config/api";
-import { Provider } from "@reown/appkit-adapter-solana/react";
+
 import QRCode from "react-qr-code";
 import {
   createTransferInstruction,
   getAssociatedTokenAddress,
 } from "@solana/spl-token";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
+import { UserData } from "@/app/types/user.types";
 
 interface BalanceData {
   balances: {
     sonic: number;
     [key: string]: number;
   };
-}
-
-interface UserData {
-  id: string;
-  tiktokUsername: string;
-  walletAddress: string;
-  email?: string;
 }
 
 // Sonic token mint address on Solana (replace with actual token mint address)
@@ -46,10 +38,10 @@ export default function SonicGiftPage() {
   const tiktokUsername = searchParams.get("id");
 
   // AppKit hooks
-  const { open } = useAppKit();
-  const { address, isConnected } = useAppKitAccount();
-  const { walletProvider } = useAppKitProvider<Provider>("solana");
-
+  const { publicKey, connected, wallet, signTransaction } = useWallet();
+  const { initiateDeepLink } = useWalletDeepLink();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [dropdownVisible, setDropdownVisible] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [balanceData, setBalanceData] = useState<BalanceData | null>(null);
   const [amount, setAmount] = useState("10");
@@ -117,17 +109,20 @@ export default function SonicGiftPage() {
     }
   };
 
-  const handleConnectWallet = async () => {
+  const handleConnectWallet = () => {
     try {
-      open();
+      initiateDeepLink();
+      setDropdownVisible(true);
+      // Track wallet connection attempt
     } catch (error) {
-      console.error("Error opening AppKit:", error);
-      toast.error("Failed to open wallet connection dialog");
+      if (error instanceof Error) {
+        console.log("wallet_connect", error.message);
+      }
     }
   };
 
   const handleSendSonic = async () => {
-    if (!isConnected || !address || !walletProvider) {
+    if (!connected || !publicKey || !wallet) {
       toast.error("Please connect your wallet first");
       return;
     }
@@ -155,7 +150,7 @@ export default function SonicGiftPage() {
       const amountInSmallestUnit = amountValue * Math.pow(10, 9);
 
       // Get sender and recipient token account addresses
-      const senderPublicKey = new PublicKey(address);
+      const senderPublicKey = new PublicKey(publicKey);
       const recipientPublicKey = new PublicKey(userData.walletAddress);
 
       const senderTokenAccount = await getAssociatedTokenAddress(
@@ -185,9 +180,10 @@ export default function SonicGiftPage() {
       transaction.feePayer = senderPublicKey;
 
       // Sign and send transaction using AppKit wallet provider
-      const signedTransaction = await walletProvider.signTransaction(
-        transaction
-      );
+      if (!signTransaction) {
+        throw new Error("Wallet does not support signing transactions");
+      }
+      const signedTransaction = await signTransaction(transaction);
       const signature = await connection.sendRawTransaction(
         signedTransaction.serialize()
       );
@@ -348,19 +344,20 @@ export default function SonicGiftPage() {
                 <div className="flex items-center">
                   <span
                     className={`inline-block w-2 h-2 rounded-full mr-2 ${
-                      isConnected ? "bg-green-500" : "bg-red-500"
+                      connected ? "bg-green-500" : "bg-red-500"
                     }`}
                   ></span>
                   <span className="text-sm">
-                    {isConnected ? "Connected" : "Not Connected"}
+                    {connected ? "Connected" : "Not Connected"}
                   </span>
                 </div>
               </div>
 
-              {isConnected && address && (
+              {connected && publicKey && (
                 <div className="mt-2 text-xs text-gray-400 flex items-center justify-between">
                   <span className="font-mono">
-                    {address.slice(0, 10)}...{address.slice(-6)}
+                    {publicKey.toString().slice(0, 10)}...
+                    {publicKey.toString().slice(-6)}
                   </span>
                 </div>
               )}
@@ -421,9 +418,7 @@ export default function SonicGiftPage() {
                   </button>
 
                   <button
-                    onClick={
-                      isConnected ? handleSendSonic : handleConnectWallet
-                    }
+                    onClick={connected ? handleSendSonic : handleConnectWallet}
                     disabled={isLoading}
                     className="flex items-center justify-center py-3 px-4 bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -431,7 +426,7 @@ export default function SonicGiftPage() {
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
                     ) : (
                       <>
-                        {isConnected ? (
+                        {connected ? (
                           <>
                             <Send className="w-5 h-5 mr-2" />
                             Send $SONIC

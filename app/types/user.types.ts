@@ -22,3 +22,26 @@ export interface BalanceData {
     exists: boolean;
   };
 }
+
+export interface SonicPriceDisplayProps {
+  sonicToUsdRate: number;
+  usdToNgnRate: number;
+  priceTimestamp: Date | null;
+  isLoadingPrice: boolean;
+  onRefresh: () => void;
+}
+
+export interface WithdrawalMethod {
+  id: string;
+  name: string;
+  icon: React.ReactNode;
+  description: string;
+}
+
+export interface SonicBalanceDisplayProps {
+  balanceData: BalanceData | null;
+  sonicToUsdRate: number;
+  isLoadingBalance: boolean;
+  onRefresh: () => void;
+  calculateNGNValue: (amount: number) => number;
+}

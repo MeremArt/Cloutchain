@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Nunito, Orbitron, Montserrat } from "next/font/google";
 import "./globals.css";
-import ContextProvider from "@/context";
+// import ContextProvider from "@/context";
+import AppWalletProvider from "./wallet/AppWalletProvider";
 
 const nunito = Nunito({
   subsets: ["latin"],
@@ -56,7 +57,7 @@ export default function RootLayout({
       <body
         className={`${nunito.className} ${orbitron.className}  ${montserrat.className} antialiased`}
       >
-        <ContextProvider>{children}</ContextProvider>
+        <AppWalletProvider>{children}</AppWalletProvider>
       </body>
     </html>
   );

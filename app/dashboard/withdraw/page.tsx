@@ -15,36 +15,14 @@ import toast, { Toaster } from "react-hot-toast";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import { API_ENDPOINTS } from "../../../config/api";
 import { HermesClient } from "@pythnetwork/hermes-client";
+import { UserData } from "@/app/types/user.types";
+import { WithdrawalMethod } from "@/app/types/user.types";
+import { BalanceData } from "@/app/types/user.types";
+import SonicBalanceDisplay from "@/app/components/SonicBalanceDisplay/SonicBalanceDisplay";
 // Replace with Sonic's actual price feed ID when available
 const SONIC_PRICE_FEED_ID =
   "0xb2748e718cf3a75b0ca099cb467aea6aa8f7d960b381b3970769b5a2d6be26dc";
-
-interface BalanceData {
-  balances: {
-    sonic: number;
-    [key: string]: number;
-  };
-}
-
-interface UserData {
-  id: string;
-  tiktokUsername: string;
-  walletAddress: string;
-  email?: string;
-}
-
-interface WithdrawalMethod {
-  id: string;
-  name: string;
-  icon: React.ReactNode;
-  description: string;
-}
-// interface PriceData {
-//   price: number;
-//   conf: number;
-//   timestamp: number;
-//   status: string;
-// }
+import SonicPriceDisplay from "@/app/components/SonicPriceDisplay/SonicPriceDisplay";
 
 const WithdrawalPage = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -381,111 +359,23 @@ const WithdrawalPage = () => {
       <h1 className="text-2xl font-bold text-white mb-6">Withdraw Funds</h1>
 
       <div className="grid gap-6">
-        {/* Balance Card */}
+        {/* Price Display Component */}
+        <SonicPriceDisplay
+          sonicToUsdRate={SONIC_TO_USD_RATE}
+          usdToNgnRate={USD_TO_NGN_RATE}
+          priceTimestamp={priceTimestamp}
+          isLoadingPrice={isLoadingPrice}
+          onRefresh={fetchSonicPrice}
+        />
 
-        <div className="bg-gray-800 rounded-xl p-6 shadow-lg">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center">
-              <DollarSign className="w-6 h-6 text-yellow-400 mr-2" />
-              <h3 className="text-lg font-semibold text-white">
-                $SONIC Live Price
-              </h3>
-            </div>
-            <button
-              className="p-2 hover:bg-gray-700 rounded-full transition-colors"
-              onClick={fetchSonicPrice}
-              disabled={isLoadingPrice}
-            >
-              <RefreshCw
-                className={`w-5 h-5 text-gray-400 ${
-                  isLoadingPrice ? "animate-spin" : ""
-                }`}
-              />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <div className="text-3xl font-bold text-white">
-                ${SONIC_TO_USD_RATE.toFixed(4)}
-              </div>
-              <div className="text-sm text-gray-400 mt-1">
-                {priceTimestamp
-                  ? `Last updated: ${priceTimestamp.toLocaleTimeString()}`
-                  : "Using default price"}
-              </div>
-            </div>
-
-            <div className="bg-gray-700 p-4 rounded-lg flex flex-col justify-center">
-              <div className="flex justify-between mb-1">
-                <span className="text-sm text-gray-400">Exchange Rate:</span>
-                <span className="text-sm text-white">
-                  1 $SONIC = ${SONIC_TO_USD_RATE.toFixed(4)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-400">NGN Rate:</span>
-                <span className="text-sm text-white">
-                  $1 = ₦{USD_TO_NGN_RATE.toLocaleString()}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Balance Card */}
-        <div className="bg-gray-800 rounded-xl p-6 shadow-lg">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center">
-              <DollarSign className="w-6 h-6 text-yellow-400 mr-2" />
-              <h3 className="text-lg font-semibold font-orbitron text-white">
-                Available Balance
-              </h3>
-            </div>
-            <button
-              className="p-2 hover:bg-gray-700 rounded-full transition-colors"
-              onClick={fetchBalance}
-              disabled={isLoadingBalance}
-            >
-              <RefreshCw
-                className={`w-5 h-5 text-gray-400 ${
-                  isLoadingBalance ? "animate-spin" : ""
-                }`}
-              />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <div className="text-3xl font-bold font-orbitron text-white">
-                {balanceData ? balanceData.balances.sonic.toFixed(2) : "0.00"}{" "}
-                $SONIC
-              </div>
-              <div className="text-gray-400 mt-1">
-                ≈ ₦
-                {balanceData
-                  ? calculateNGNValue(
-                      balanceData.balances.sonic
-                    ).toLocaleString()
-                  : "0.00"}
-              </div>
-            </div>
-
-            <div className="bg-gray-700 p-3 rounded-lg flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-sm text-gray-400 mb-1">USD Value</div>
-                <div className="text-lg font-medium text-white">
-                  $
-                  {balanceData
-                    ? (balanceData.balances.sonic * SONIC_TO_USD_RATE).toFixed(
-                        2
-                      )
-                    : "0.00"}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Balance Display Component */}
+        <SonicBalanceDisplay
+          balanceData={balanceData}
+          sonicToUsdRate={SONIC_TO_USD_RATE}
+          isLoadingBalance={isLoadingBalance}
+          onRefresh={fetchBalance}
+          calculateNGNValue={calculateNGNValue}
+        />
         {/* Withdrawal Form */}
         <div className="bg-gray-800 rounded-xl p-6 shadow-lg">
           <h3 className="text-lg font-semibold text-white mb-6">

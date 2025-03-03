@@ -79,6 +79,7 @@ const page = () => {
     { id: 9, tag: "#KenyaElections", posts: 2987, odds: 24, change: -5 },
     { id: 10, tag: "#NairobiFashion", posts: 2654, odds: 18, change: 2 },
   ];
+
   return (
     <div className="bg-gray-900 p-6">
       <div className="mb-6 flex justify-between items-center">
