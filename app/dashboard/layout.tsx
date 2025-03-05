@@ -127,7 +127,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-900">
-        <Loader className="h-8 w-8 animate-spin text-orange-600" />
+        <Loader className="h-8 w-8 animate-spin text-yellow-300" />
       </div>
     );
   }
