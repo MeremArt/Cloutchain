@@ -4,6 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 
 import React, { ReactNode, useEffect, useState } from "react";
+
 import {
   X,
   Menu,
@@ -12,9 +13,13 @@ import {
   Home,
   User,
   Wallet,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   CreditCard,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Link as LinkIcon,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Tag,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   BarChart,
   DoorOpen,
   Gem,
@@ -42,12 +47,13 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const baseMenuItems = [
     { icon: Home, label: "Dashboard", href: "/dashboard" },
     { icon: User, label: "Profile", href: "/dashboard/profile" },
-    { icon: Twitter, label: "twiiter", href: "/dashboard/twitter" },
     { icon: Wallet, label: "Wallet", href: "/dashboard/withdraw" },
-    { icon: CreditCard, label: "Card", href: "/dashboard/submit" },
-    { icon: LinkIcon, label: "Referrals", href: "/dashboard/referrals" },
-    { icon: Tag, label: "Tx pool", href: "/dashboard/pool" },
-    { icon: BarChart, label: "History", href: "/dashboard/history" },
+    // { icon: Twitter, label: "twiiter", href: "/dashboard/twitter" },
+
+    // { icon: CreditCard, label: "Card", href: "/dashboard/submit" },
+    // { icon: LinkIcon, label: "Referrals", href: "/dashboard/referrals" },
+    // { icon: Tag, label: "Tx pool", href: "/dashboard/pool" },
+    // { icon: BarChart, label: "History", href: "/dashboard/history" },
   ];
 
   const getMenuItems = () => {
