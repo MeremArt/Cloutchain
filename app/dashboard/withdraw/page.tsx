@@ -12,7 +12,8 @@ import {
   Check,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
-import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
+import { useWallet } from "@solana/wallet-adapter-react";
+import useWalletDeepLink from "@/app/components/DeepLink/DeepLink";
 import { API_ENDPOINTS } from "../../../config/api";
 import { HermesClient } from "@pythnetwork/hermes-client";
 import { UserData } from "@/app/types/user.types";
@@ -41,13 +42,16 @@ const WithdrawalPage = () => {
   const [withdrawalReference, setWithdrawalReference] = useState<string | null>(
     null
   );
-
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { publicKey, connected, wallet, signTransaction } = useWallet();
   // Exchange rates
   const [sonicPrice, setSonicPrice] = useState(0.33); // Default fallback price
   const [priceTimestamp, setPriceTimestamp] = useState<Date | null>(null);
   const [isLoadingPrice, setIsLoadingPrice] = useState(false);
   const [usdToNgnRate, setUsdToNgnRate] = useState(1475);
-
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [dropdownVisible, setDropdownVisible] = useState(false);
+  const { initiateDeepLink } = useWalletDeepLink();
   // Min and max withdrawal
   // Derived values
   const SONIC_TO_USD_RATE = sonicPrice;
@@ -55,14 +59,11 @@ const WithdrawalPage = () => {
   const SONIC_TO_NGN_RATE = SONIC_TO_USD_RATE * USD_TO_NGN_RATE;
 
   // Min and max withdrawal
-  const MIN_WITHDRAWAL = 10; // 10 SONIC
+  const MIN_WITHDRAWAL = 5; // 10 SONIC
   const MIN_WITHDRAWAL_NGN = MIN_WITHDRAWAL * SONIC_TO_NGN_RATE;
 
   // Withdrawal Fee
   const WITHDRAWAL_FEE_PERCENT = 1.5; // 1.5%
-
-  const { open } = useAppKit();
-  const { isConnected } = useAppKitAccount();
 
   const withdrawalMethods: WithdrawalMethod[] = [
     {
@@ -85,6 +86,95 @@ const WithdrawalPage = () => {
       setUserData(JSON.parse(storedData));
     }
   }, []);
+  const handleProceedWithdrawal = () => {
+    if (!validateWithdrawal()) return;
+    setShowConfirmation(true);
+  };
+
+  const processWithdrawal = async () => {
+    if (!validateWithdrawal()) return;
+
+    setIsProcessing(true);
+    try {
+      // Prepare request data
+      const withdrawalData = {
+        tiktokUsername: userData?.tiktokUsername,
+        amount: parseFloat(amount),
+      };
+
+      // Add different properties based on withdrawal method
+      if (selectedMethod === "bank") {
+        Object.assign(withdrawalData, {
+          bankDetails: bankDetails,
+        });
+
+        // Make API call to bank withdrawal endpoint
+        const response = await fetch(API_ENDPOINTS.WITHDRAWALS.BANK, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("jwt")}`,
+          },
+          body: JSON.stringify(withdrawalData),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.message || "Failed to process bank withdrawal"
+          );
+        }
+
+        const data = await response.json();
+        setWithdrawalReference(data.reference);
+      } else if (selectedMethod === "wallet" && publicKey) {
+        // For wallet withdrawal, use the connected wallet's public key
+        Object.assign(withdrawalData, {
+          destinationWallet: publicKey.toString(),
+        });
+
+        // Make API call to wallet withdrawal endpoint
+        const response = await fetch(API_ENDPOINTS.WITHDRAWALS.WALLET, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify(withdrawalData),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.message || "Failed to process wallet withdrawal"
+          );
+        }
+
+        const data = await response.json();
+        setWithdrawalReference(data.transactionId);
+      }
+
+      toast.success("Withdrawal request submitted successfully");
+
+      // After successful withdrawal, reset form and fetch new balance
+      setAmount("");
+      setSelectedMethod(null);
+      setBankDetails({
+        accountName: "",
+        accountNumber: "",
+        bankName: "",
+      });
+      setShowConfirmation(false);
+      fetchBalance();
+    } catch (error) {
+      console.error("Error processing withdrawal:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to process withdrawal"
+      );
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   // Fetch live Sonic price from Pyth Network
   // Fetch Sonic price from Pyth Network
@@ -186,6 +276,18 @@ const WithdrawalPage = () => {
     }
   }, [userData]);
 
+  const handleConnectWallet = () => {
+    try {
+      initiateDeepLink();
+      setDropdownVisible(true);
+      // Track wallet connection attempt
+    } catch (error) {
+      if (error instanceof Error) {
+        console.log("wallet_connect", error.message);
+      }
+    }
+  };
+
   const fetchExchangeRate = useCallback(async () => {
     try {
       // Simulated exchange rate
@@ -253,10 +355,6 @@ const WithdrawalPage = () => {
     });
   };
 
-  const handleConnectWallet = () => {
-    open();
-  };
-
   const validateWithdrawal = () => {
     const amountValue = parseFloat(amount);
 
@@ -293,50 +391,12 @@ const WithdrawalPage = () => {
       }
     }
 
-    if (selectedMethod === "wallet" && !isConnected) {
+    if (selectedMethod === "wallet" && !connected) {
       toast.error("Please connect your wallet first");
       return false;
     }
 
     return true;
-  };
-
-  const handleProceedWithdrawal = () => {
-    if (!validateWithdrawal()) return;
-    setShowConfirmation(true);
-  };
-
-  const processWithdrawal = async () => {
-    if (!validateWithdrawal()) return;
-
-    setIsProcessing(true);
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Generate a random reference number
-      const reference = `SON-${Date.now().toString().slice(-8)}-${Math.floor(
-        Math.random() * 1000
-      )}`;
-      setWithdrawalReference(reference);
-
-      toast.success("Withdrawal request submitted successfully");
-      // After successful withdrawal, reset form and fetch new balance
-      setAmount("");
-      setSelectedMethod(null);
-      setBankDetails({
-        accountName: "",
-        accountNumber: "",
-        bankName: "",
-      });
-      setShowConfirmation(false);
-      fetchBalance();
-    } catch (error) {
-      console.error("Error processing withdrawal:", error);
-      toast.error("Failed to process withdrawal");
-    } finally {
-      setIsProcessing(false);
-    }
   };
 
   const handleCopyReference = () => {
@@ -615,7 +675,7 @@ const WithdrawalPage = () => {
                 <div className="bg-gray-700 p-4 rounded-lg mb-6">
                   <h4 className="text-white mb-3">Wallet Transfer</h4>
 
-                  {isConnected ? (
+                  {connected ? (
                     <div className="bg-green-900/30 border border-green-700 rounded p-3 flex items-center">
                       <Check className="w-5 h-5 text-green-400 mr-2" />
                       <span className="text-green-400">Wallet connected</span>

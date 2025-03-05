@@ -22,10 +22,9 @@ export const API_ENDPOINTS = {
   },
 
   // Wallet related endpoints
-  WALLET: {
-    ACCOUNTS: `${API_BASE_URL}/wallet`,
-    BASE: `${API_BASE_URL}/wallet`,
-    VALIDATE: `${API_BASE_URL}/wallet/validate`,
+  WITHDRAWALS: {
+    WALLET: `${API_BASE_URL}/api/wallet`,
+    BANK: `${API_BASE_URL}/wallet`,
   },
 
   TRANSACTION: {
