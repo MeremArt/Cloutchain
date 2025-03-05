@@ -63,7 +63,7 @@ const WithdrawalPage = () => {
   const MIN_WITHDRAWAL_NGN = MIN_WITHDRAWAL * SONIC_TO_NGN_RATE;
 
   // Withdrawal Fee
-  const WITHDRAWAL_FEE_PERCENT = 1.5; // 1.5%
+  const WITHDRAWAL_FEE_PERCENT = 0.1; // 1.5%
 
   const withdrawalMethods: WithdrawalMethod[] = [
     {
@@ -93,7 +93,7 @@ const WithdrawalPage = () => {
 
   const processWithdrawal = async () => {
     if (!validateWithdrawal()) return;
-
+    const initialBalance = balanceData?.balances.sonic || 0;
     setIsProcessing(true);
     try {
       // Prepare request data
@@ -102,27 +102,41 @@ const WithdrawalPage = () => {
         amount: parseFloat(amount),
       };
 
+      // Use the same token key for both methods
+      const authToken =
+        localStorage.getItem("jwt") || localStorage.getItem("token");
+
       // Add different properties based on withdrawal method
       if (selectedMethod === "bank") {
         Object.assign(withdrawalData, {
           bankDetails: bankDetails,
         });
 
+        console.log("Sending bank withdrawal request:", withdrawalData);
+        console.log("API endpoint:", API_ENDPOINTS.WITHDRAWALS.BANK);
+
         // Make API call to bank withdrawal endpoint
         const response = await fetch(API_ENDPOINTS.WITHDRAWALS.BANK, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("jwt")}`,
+            Authorization: `Bearer ${authToken}`,
           },
           body: JSON.stringify(withdrawalData),
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(
-            errorData.message || "Failed to process bank withdrawal"
-          );
+          const contentType = response.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const errorData = await response.json();
+            throw new Error(
+              errorData.message || "Failed to process bank withdrawal"
+            );
+          } else {
+            const errorText = await response.text();
+            console.error("Non-JSON error response:", errorText);
+            throw new Error("Server error - received non-JSON response");
+          }
         }
 
         const data = await response.json();
@@ -133,21 +147,31 @@ const WithdrawalPage = () => {
           destinationWallet: publicKey.toString(),
         });
 
+        console.log("Sending wallet withdrawal request:", withdrawalData);
+        console.log("API endpoint:", API_ENDPOINTS.WITHDRAWALS.WALLET);
+
         // Make API call to wallet withdrawal endpoint
         const response = await fetch(API_ENDPOINTS.WITHDRAWALS.WALLET, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${authToken}`,
           },
           body: JSON.stringify(withdrawalData),
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(
-            errorData.message || "Failed to process wallet withdrawal"
-          );
+          const contentType = response.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const errorData = await response.json();
+            throw new Error(
+              errorData.message || "Failed to process wallet withdrawal"
+            );
+          } else {
+            const errorText = await response.text();
+            console.error("Non-JSON error response:", errorText);
+            throw new Error("Server error - received non-JSON response");
+          }
         }
 
         const data = await response.json();
@@ -168,9 +192,30 @@ const WithdrawalPage = () => {
       fetchBalance();
     } catch (error) {
       console.error("Error processing withdrawal:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to process withdrawal"
-      );
+      if (
+        error instanceof Error &&
+        error.message.includes("Transaction error")
+      ) {
+        // Wait a moment for the blockchain to update
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+
+        // Fetch new balance
+        await fetchBalance();
+
+        // Compare old and new balances
+        const newBalance = balanceData?.balances.sonic || 0;
+
+        if (newBalance < initialBalance) {
+          // Balance decreased, transaction likely succeeded
+          toast.success(
+            "Your withdrawal appears to have succeeded! Your balance has been updated."
+          );
+
+          // Show success UI instead of error
+          setWithdrawalReference("Transaction completed");
+          return;
+        }
+      }
     } finally {
       setIsProcessing(false);
     }
