@@ -5,7 +5,7 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 export const API_ENDPOINTS = {
   // auth related endpoints
   AUTH: {
-    SIGNUP: `${API_BASE_URL}/api/auth/**`,
+    SIGNUP: `${API_BASE_URL}/api/auth/register`,
     LOGIN: `${API_BASE_URL}/api/auth/login`,
   },
   PROFILE: {
