@@ -121,9 +121,8 @@ export default function Register() {
         JSON.stringify({
           id: responseData.user.id,
           email: responseData.user.email,
-          phoneNumber: responseData.user.phoneNumber,
+          tiktokUsername: responseData.user.tiktokUsername,
           walletAddress: responseData.user.walletAddress,
-          twitterId: responseData.user.twitterId,
         })
       );
 
