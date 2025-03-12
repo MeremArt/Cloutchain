@@ -12,8 +12,8 @@ const page = () => {
   const trendingTweets = [
     {
       id: 1,
-      author: "KenyanTrends",
-      handle: "@kenyan_trends",
+      author: "FashionQueen",
+      handle: "@queen_k",
       content:
         "Breaking: Government announces new economic policy that will affect all citizens #KenyaEconomy",
       likes: 1243,
@@ -54,7 +54,7 @@ const page = () => {
     },
     {
       id: 4,
-      author: "Tech Nairobi",
+      author: "Aisha Kimani",
       handle: "@tech_nairobi",
       content:
         "New tech hub opening in Westlands next month, creating over 1000 jobs #TechKenya",
