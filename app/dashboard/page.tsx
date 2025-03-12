@@ -201,9 +201,9 @@ const page = () => {
                         />
                       )}
                     </div>
-                    <button className="text-yellow-400 text-xs font-medium hover:underline">
+                    {/* <button className="text-yellow-400 text-xs font-medium hover:underline">
                       Place Bet
-                    </button>
+                    </button> */}
                   </div>
                 </div>
               ))}
