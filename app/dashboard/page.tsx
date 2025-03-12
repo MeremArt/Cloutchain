@@ -68,16 +68,16 @@ const page = () => {
     },
   ];
   const hashtagLeaderboard = [
-    { id: 1, name: "Empress", posts: 15243, odds: 82, change: 14 },
-    { id: 2, name: "John Mwangi", posts: 8965, odds: 65, change: 7 },
-    { id: 3, name: "Aisha Kimani", posts: 7832, odds: 59, change: -2 },
-    { id: 4, name: "Kevin Otieno", posts: 6921, odds: 48, change: 9 },
-    { id: 5, name: "TechGuru254", posts: 5467, odds: 41, change: 5 },
-    { id: 6, name: "RallyKing", posts: 4832, odds: 36, change: 3 },
-    { id: 7, name: "KOT Legend", posts: 3943, odds: 32, change: -1 },
-    { id: 8, name: "MombasaVibes", posts: 3654, odds: 29, change: 0 },
-    { id: 9, name: "PoliticalAnalystKE", posts: 2987, odds: 24, change: -5 },
-    { id: 10, name: "FashionQueen", posts: 2654, odds: 18, change: 2 },
+    { id: 1, tag: "Empress", posts: 15243, odds: 82, change: 14 },
+    { id: 2, tag: "John Mwangi", posts: 8965, odds: 65, change: 7 },
+    { id: 3, tag: "Aisha Kimani", posts: 7832, odds: 59, change: -2 },
+    { id: 4, tag: "Kevin Otieno", posts: 6921, odds: 48, change: 9 },
+    { id: 5, tag: "TechGuru254", posts: 5467, odds: 41, change: 5 },
+    { id: 6, tag: "RallyKing", posts: 4832, odds: 36, change: 3 },
+    { id: 7, tag: "KOT Legend", posts: 3943, odds: 32, change: -1 },
+    { id: 8, tag: "MombasaVibes", posts: 3654, odds: 29, change: 0 },
+    { id: 9, tag: "PoliticalAnalystKE", posts: 2987, odds: 24, change: -5 },
+    { id: 10, tag: "FashionQueen", posts: 2654, odds: 18, change: 2 },
   ];
 
   return (
