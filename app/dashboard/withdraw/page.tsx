@@ -437,7 +437,7 @@ const WithdrawalPage = () => {
     }
 
     if (selectedMethod === "wallet" && !connected) {
-      toast.error("Please connect your wallet first");
+      toast.error("Please connect your wallet to proceed");
       return false;
     }
 
