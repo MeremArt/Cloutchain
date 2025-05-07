@@ -3,7 +3,7 @@ import { Nunito, Orbitron, Montserrat } from "next/font/google";
 import "./globals.css";
 // import ContextProvider from "@/context";
 import AppWalletProvider from "./wallet/AppWalletProvider";
-
+import { CivicAuthProvider } from "@civic/auth-web3/react";
 const nunito = Nunito({
   subsets: ["latin"],
   weight: ["200", "300", "400", "500", "600", "700", "800", "900"],
@@ -52,12 +52,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const CIVIC_CLIENT_ID = process.env.NEXT_PUBLIC_CIVIC_CLIENT_ID || "";
   return (
     <html lang="en">
       <body
         className={`${nunito.className} ${orbitron.className}  ${montserrat.className} antialiased`}
       >
-        <AppWalletProvider>{children}</AppWalletProvider>
+        <CivicAuthProvider clientId={CIVIC_CLIENT_ID}>
+          <AppWalletProvider>{children}</AppWalletProvider>
+        </CivicAuthProvider>
       </body>
     </html>
   );
