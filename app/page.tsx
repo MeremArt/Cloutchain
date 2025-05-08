@@ -130,7 +130,7 @@ const LandingPage: React.FC = () => {
           Tradable
         </h1>
         <p className="font-nunito font-normal text-[16px] md:text-[20px] leading-[1.6] md:leading-[36px] text-[#f5f5f5] mb-6">
-          Turn Your Clout Into Cash with CloutChain, Powered by Sonic.
+          Turn Your Clout Into Cash with CloutChain, Powered by Solana.
         </p>
         <Link href="/login">
           <button className="bg-[#fffd55] rounded-[12px] py-3 px-8 font-nunito font-bold text-[18px] md:text-[22px] text-[#0f0f0f] cursor-pointer hover:scale-105 transition-transform">

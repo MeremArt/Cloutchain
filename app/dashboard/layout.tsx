@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
+import { useUser } from "@civic/auth-web3/react";
 
 import Link from "next/link";
 
@@ -44,7 +46,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
-
+  const { signIn, signOut } = useUser();
   // Define base menu items with appropriate icons
   const baseMenuItems = [
     { icon: Home, label: "Dashboard", href: "/dashboard" },
@@ -100,6 +102,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const handleLogout = () => {
     localStorage.removeItem("jwt");
     localStorage.removeItem("userData");
+    signOut();
     toast.success("Successfully logged out", {
       duration: 3000,
       position: "top-right",
