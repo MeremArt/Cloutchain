@@ -1,6 +1,6 @@
 import { DollarSign, RefreshCw } from "lucide-react";
 
-import { SonicBalanceDisplayProps } from "@/app/types/user.types";
+import { SonicBalanceDisplayProps } from "@/app/interface/user.interface";
 
 // interface BalanceData {
 //   balances: {
