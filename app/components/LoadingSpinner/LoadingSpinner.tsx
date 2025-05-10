@@ -1,5 +1,5 @@
 import React from "react";
-import { LoadingSpinnerProps } from "@/app/types/loader.types";
+import { LoadingSpinnerProps } from "@/app/interface/loader.interface";
 
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   message = "Loading bank accounts...",

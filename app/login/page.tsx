@@ -16,31 +16,52 @@ import { API_ENDPOINTS } from "../../config/api";
 
 export default function Login() {
   const router = useRouter();
-  const user = useUser(); // Add Civic Auth user context
+  const { user, signIn } = useUser(); // Use destructuring to get both user and signIn
   const [formData, setFormData] = useState({
     tiktokUsername: "",
     password: "",
   });
-
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isCivicLoading, setIsCivicLoading] = useState(false);
 
   // Handle Civic Auth logic
   useEffect(() => {
-    if (user.user && userHasWallet(user)) {
+    // If user is authenticated with Civic
+    if (user && userHasWallet(user)) {
+      // Store user data from Civic Auth
+      if (user) {
+        const civicUserData = {
+          id: user.id || "",
+          email: user.email || "",
+          tiktokUsername: user.username || user.email?.split("@")[0] || "", // Use username or first part of email
+          walletAddress: user.solana?.address || "",
+        };
+
+        localStorage.setItem("userData", JSON.stringify(civicUserData));
+      }
+
+      // Store login method in localStorage
+      localStorage.setItem("loginMethod", "civic");
+
       // User is authenticated with a wallet, redirect to dashboard
       router.push("/dashboard/profile");
-    } else if (user.user && !userHasWallet(user)) {
+    } else if (user && !userHasWallet(user)) {
       // User is authenticated but doesn't have a wallet, create one
       const createWallet = async () => {
         try {
           toast.loading("Setting up your wallet...");
           // await user.createWallet();
           toast.success("Wallet created successfully!");
+
+          // Store login method in localStorage
+          localStorage.setItem("loginMethod", "civic");
+
           router.push("/dashboard/profile");
         } catch (error) {
           console.error("Error creating wallet:", error);
           toast.error("Failed to create wallet");
+          setIsCivicLoading(false);
         }
       };
       createWallet();
@@ -55,8 +76,30 @@ export default function Login() {
     }));
   };
 
+  const handleCivicAuth = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent any form submission
+    setIsCivicLoading(true);
+
+    // Find and click the hidden Civic button
+    const civicButton = document.querySelector(
+      ".civic-user-button"
+    ) as HTMLElement;
+
+    if (civicButton) {
+      civicButton.click();
+      signIn();
+    } else {
+      toast.error("Civic Auth not available");
+      setIsCivicLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Don't proceed if Civic Auth is loading
+    if (isCivicLoading) return;
+
     setIsLoading(true);
 
     // Show loading toast
@@ -67,10 +110,6 @@ export default function Login() {
         tiktokUsername: formData.tiktokUsername,
         password: formData.password,
       });
-      console.log("Sending login request with payload:", {
-        tiktokUsername: formData.tiktokUsername,
-        password: "[REDACTED]",
-      });
 
       if (response.status !== 200) {
         throw new Error(response.data.message || "An error occurred");
@@ -78,19 +117,18 @@ export default function Login() {
 
       const responseData = response.data;
 
-      // Debug logging
-      console.log("Sending login request with payload:", {
-        tiktokUsername: formData.tiktokUsername,
-        password: "[REDACTED]",
-      });
       // Store the JWT in local storage
       localStorage.setItem("jwt", responseData.token);
+
+      // Store login method in localStorage
+      localStorage.setItem("loginMethod", "traditional");
 
       if (!responseData.user) {
         console.error("Login failed, user data is missing:", responseData);
         toast.error("Login failed: user data is missing");
         return;
       }
+
       // Store user data
       localStorage.setItem(
         "userData",
@@ -194,6 +232,58 @@ export default function Login() {
               </p>
             </div>
 
+            {/* Civic Auth Button Section - MOVED TO TOP */}
+            <div className="mb-8 text-center">
+              {/* Custom Civic Auth Button */}
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleCivicAuth}
+                className="w-full bg-black text-white p-4 rounded-lg border border-gray-300 shadow-sm transition-all font-medium font-monserrat hover:bg-gray-800"
+                type="button"
+                disabled={isCivicLoading || isLoading}
+              >
+                {isCivicLoading ? "Connecting..." : "Sign in with Civic Auth"}
+              </motion.button>
+
+              {/* Hidden original UserButton */}
+              <div className="hidden">
+                <UserButton className="civic-user-button" />
+              </div>
+
+              {(isCivicLoading || user?.isLoading) && (
+                <div className="mt-3 flex items-center justify-center text-sm text-gray-500">
+                  <svg
+                    className="animate-spin h-5 w-5 mr-2 text-indigo-600"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Connecting wallet...
+                </div>
+              )}
+            </div>
+
+            <div className="relative flex items-center py-2 mb-6">
+              <div className="flex-grow border-t border-gray-300"></div>
+              <span className="flex-shrink mx-4 text-gray-500 text-sm">or</span>
+              <div className="flex-grow border-t border-gray-300"></div>
+            </div>
+
             {/* Traditional login form */}
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
@@ -212,7 +302,7 @@ export default function Login() {
                     onChange={handleInputChange}
                     className="w-full p-3 pl-12 border font-montserrat text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                     required
-                    disabled={isLoading}
+                    disabled={isLoading || isCivicLoading}
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1 font-montserrat">
@@ -238,13 +328,14 @@ export default function Login() {
                     onChange={handleInputChange}
                     className="w-full p-3 pl-12 border font-montserrat text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                     required
-                    disabled={isLoading}
+                    disabled={isLoading || isCivicLoading}
                   />
 
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 cursor-pointer p-1"
+                    disabled={isLoading || isCivicLoading}
                   >
                     {showPassword ? (
                       <EyeOff className="h-5 w-5" />
@@ -256,76 +347,21 @@ export default function Login() {
               </div>
 
               <motion.button
-                whileHover={!isLoading ? { scale: 1.02 } : {}}
-                whileTap={!isLoading ? { scale: 0.98 } : {}}
+                whileHover={
+                  !isLoading && !isCivicLoading ? { scale: 1.02 } : {}
+                }
+                whileTap={!isLoading && !isCivicLoading ? { scale: 0.98 } : {}}
                 type="submit"
                 className={`w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-lg shadow-lg transition-all font-medium
                   ${
-                    isLoading
+                    isLoading || isCivicLoading
                       ? "opacity-70 cursor-not-allowed"
                       : "hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl"
                   }`}
-                disabled={isLoading}
+                disabled={isLoading || isCivicLoading}
               >
                 {isLoading ? "Logging in..." : "Sign In"}
               </motion.button>
-              <div className="relative flex items-center py-2">
-                <div className="flex-grow border-t border-gray-300"></div>
-                <span className="flex-shrink mx-4 text-gray-500 text-sm">
-                  or
-                </span>
-                <div className="flex-grow border-t border-gray-300"></div>
-              </div>
-              {/* Civic Auth Button Section - ADDED HERE */}
-              <div className="mb-8 text-center">
-                {/* Custom Civic Auth Button */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() =>
-                    (
-                      document.querySelector(
-                        ".civic-user-button"
-                      ) as HTMLElement
-                    )?.click()
-                  }
-                  className="w-full bg-black text-white p-4 rounded-lg border border-gray-300 shadow-sm transition-all font-medium font-monserrat hover:bg-gray-800"
-                  type="button"
-                >
-                  Sign in with Civic Auth
-                </motion.button>
-
-                {/* Hidden original UserButton */}
-                <div className="hidden">
-                  <UserButton className="civic-user-button" />
-                </div>
-
-                {user.isLoading && (
-                  <div className="mt-3 flex items-center justify-center text-sm text-gray-500">
-                    <svg
-                      className="animate-spin h-5 w-5 mr-2 text-indigo-600"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Connecting wallet...
-                  </div>
-                )}
-              </div>
             </form>
 
             <div className="mt-8 text-center">

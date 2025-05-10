@@ -30,14 +30,8 @@ import {
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
-interface DashboardLayoutProps {
-  children: ReactNode;
-}
-interface UserData {
-  email: string;
-  referralCode: string;
-  role: string;
-}
+import { UserData } from "@/app/interface/user.interface";
+import { DashboardLayoutProps } from "@/app/interface/dashboard.interface";
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);

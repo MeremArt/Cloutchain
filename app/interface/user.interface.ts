@@ -1,8 +1,19 @@
 export interface UserData {
   id: string;
-  email: string;
+  email?: string;
   tiktokUsername: string;
   walletAddress: string;
+  tokenAccountAddress?: string;
+  role?: string;
+  // Civic Auth specific fields
+  isCivicAuth?: boolean;
+  name?: string;
+  picture?: string;
+  sub?: string; // Subject identifier (unique ID from Civic)
+  iss?: string; // Issuer
+  aud?: string; // Audience
+  exp?: number; // Expiration time
+  iat?: number; // Issued at time
 }
 
 export interface HeaderProps {
