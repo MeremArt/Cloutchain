@@ -7,7 +7,7 @@ import axios from "axios";
 
 import toast, { Toaster } from "react-hot-toast";
 import { Eye, EyeOff, Lock, User } from "lucide-react";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line
 import LoadingSpinner from "../components/LoadingSpinner/LoadingSpinner";
 import Image from "next/image";
 import { userHasWallet } from "@civic/auth-web3";
@@ -31,7 +31,7 @@ export default function Login() {
   // Handle Civic Auth logic
   useEffect(() => {
     // If user is authenticated with Civic
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    // eslint-disable-next-line
     if (user && userHasWallet(user)) {
       // Store user data from Civic Auth
       if (user) {
@@ -50,7 +50,7 @@ export default function Login() {
 
       // User is authenticated with a wallet, redirect to dashboard
       router.push("/dashboard/profile");
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      // eslint-disable-next-line
     } else if (user && !userHasWallet(user)) {
       // User is authenticated but doesn't have a wallet, create one
       const createWallet = async () => {
@@ -75,7 +75,7 @@ export default function Login() {
     }
   }, [user, router, userContext]);
 
-  const handleInputChange = () => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -83,7 +83,7 @@ export default function Login() {
     }));
   };
 
-  const handleCivicAuth = () => {
+  const handleCivicAuth = (e) => {
     e.preventDefault(); // Prevent any form submission
     setCivicButtonClicked(true);
 
@@ -99,7 +99,7 @@ export default function Login() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Don't proceed if Civic Auth is loading
