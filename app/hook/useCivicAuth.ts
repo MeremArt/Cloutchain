@@ -237,12 +237,12 @@ const useCivicAuth = () => {
         // Extract and log the actual error message from the response
         if (registerError.response && registerError.response.data) {
           console.error("Server error details:", registerError.response.data);
-          toast.error(
-            registerError.response.data.message ||
-              "Failed to register with Civic Auth"
-          );
+          //   toast.error(
+          //     registerError.response.data.message ||
+          //       "Failed to register with Civic Auth"
+          //   );
         } else {
-          toast.error("Failed to register with Civic Auth");
+          console.log("Failed to register with Civic Auth");
         }
 
         setAuthState({
