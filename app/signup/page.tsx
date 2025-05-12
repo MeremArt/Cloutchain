@@ -1,25 +1,38 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-
-import { API_ENDPOINTS } from "../../config/api";
 import Link from "next/link";
 import toast, { Toaster } from "react-hot-toast";
 import { Eye, EyeOff, Lock, Mail, Phone } from "lucide-react";
 import Image from "next/image";
+import usecivicAuth from "@/app/hook/useCivicAuth";
 
 export default function Register() {
   const router = useRouter();
+  const {
+    isLoading: isAuthLoading,
+    isAuthenticated,
+    registerWithCredentials,
+    loginWithCivic,
+  } = usecivicAuth();
+
   const [formData, setFormData] = useState({
     email: "",
     tiktokUsername: "",
     password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isCivicLoading, setIsCivicLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  // const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/dashboard/profile");
+    }
+  }, [isAuthenticated, router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -29,23 +42,32 @@ export default function Register() {
     }));
   };
 
+  const handleCivicAuth = async (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    if (!agreeToTerms) {
+      toast.error("Please agree to the terms and conditions first");
+      return;
+    }
+
+    setIsCivicLoading(true);
+
+    try {
+      await loginWithCivic();
+      // The auth hook will handle redirecting after successful login/registration
+    } catch (error) {
+      console.error("Civic auth error:", error);
+    } finally {
+      setIsCivicLoading(false);
+    }
+  };
+
   const validatePassword = () => {
     if (formData.password.length < 8) {
       return "Password must be at least 8 characters";
     }
-    // if (formData.password !== formData.confirmPassword) {
-    //   return "Passwords do not match";
-    // }
     return null;
   };
-
-  // const validatePhoneNumber = () => {
-  //   const phoneRegex = /^\+?[0-9]{10,15}$/;
-  //   if (!phoneRegex.test(formData.tiktokUsername)) {
-  //     return "Please enter a valid phone number";
-  //   }
-  //   return null;
-  // };
 
   const validateEmail = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -58,18 +80,15 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Don't proceed if Civic Auth is loading
+    if (isCivicLoading) return;
+
     // Validate form inputs
     const emailError = validateEmail();
     if (emailError) {
       toast.error(emailError);
       return;
     }
-
-    // const phoneError = validatePhoneNumber();
-    // if (phoneError) {
-    //   toast.error(phoneError);
-    //   return;
-    // }
 
     const passwordError = validatePassword();
     if (passwordError) {
@@ -83,102 +102,27 @@ export default function Register() {
     }
 
     setIsLoading(true);
-    // Show loading toast
-    const loadingToast = toast.loading("Creating your account...");
-
-    // let twitterIdToSend: string | null = formData.twitterId;
-    // if (!twitterIdToSend || twitterIdToSend.trim() === "") {
-    //   // Option 1: Send null instead of empty string
-    //   twitterIdToSend = null;
-    // }
 
     try {
-      const response = await fetch(API_ENDPOINTS.AUTH.SIGNUP, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          tiktokUsername: formData.tiktokUsername,
-          password: formData.password,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Registration failed");
-      }
-
-      const responseData = await response.json();
-
-      // Store the JWT token
-      localStorage.setItem("jwt", responseData.token);
-
-      // Store user data
-      localStorage.setItem(
-        "userData",
-        JSON.stringify({
-          id: responseData.user.id,
-          email: responseData.user.email,
-          tiktokUsername: responseData.user.tiktokUsername,
-          walletAddress: responseData.user.walletAddress,
-        })
+      const success = await registerWithCredentials(
+        formData.email,
+        formData.tiktokUsername,
+        formData.password
       );
 
-      // Dismiss loading toast and show success
-      toast.dismiss(loadingToast);
-      toast.success("Account created successfully!", {
-        duration: 3000,
-        style: {
-          background: "#333",
-          color: "#fff",
-        },
-      });
-      router.push("/dashboard");
-      setFormData({
-        email: "",
-        tiktokUsername: "",
-        password: "",
-      });
-      setAgreeToTerms(false);
+      if (success) {
+        setFormData({
+          email: "",
+          tiktokUsername: "",
+          password: "",
+        });
+        setAgreeToTerms(false);
 
-      // Small delay for better UX
-      setTimeout(() => {
-        router.push("/dashboard/profile");
-      }, 1000);
-    } catch (error) {
-      // Dismiss loading toast and show error
-      toast.dismiss(loadingToast);
-
-      if (
-        error instanceof TypeError &&
-        error.message.includes("Failed to fetch")
-      ) {
-        toast.error(
-          "Unable to connect to server. Please check your connection.",
-          {
-            duration: 4000,
-            style: {
-              background: "#333",
-              color: "#fff",
-            },
-          }
-        );
-      } else {
-        toast.error(
-          error instanceof Error ? error.message : "Registration failed",
-          {
-            duration: 4000,
-            style: {
-              background: "#333",
-              color: "#fff",
-            },
-          }
-        );
+        // Small delay for better UX
+        setTimeout(() => {
+          router.push("/dashboard/profile");
+        }, 1000);
       }
-
-      console.error("Registration error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -290,6 +234,87 @@ export default function Register() {
               </p>
             </div>
 
+            {/* Terms and conditions - MOVED TO TOP */}
+            <div className="flex items-start my-4">
+              <div className="flex items-center h-5">
+                <input
+                  id="terms"
+                  type="checkbox"
+                  checked={agreeToTerms}
+                  onChange={() => setAgreeToTerms(!agreeToTerms)}
+                  className="h-4 w-4 text-indigo-600 font-nunito focus:ring-indigo-500 border-gray-300 rounded"
+                  required
+                />
+              </div>
+              <div className="ml-3 text-sm">
+                <label
+                  htmlFor="terms"
+                  className="text-gray-600 font-montserrat font-bold"
+                >
+                  I agree to the{" "}
+                  <Link
+                    href=""
+                    className="text-indigo-600 hover:text-indigo-800 font-montserrat font-bold"
+                  >
+                    Terms and Conditions
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    href=""
+                    className="text-indigo-600 font-montserrat hover:text-indigo-800"
+                  >
+                    Privacy Policy
+                  </Link>
+                </label>
+              </div>
+            </div>
+
+            {/* Civic Auth Button */}
+            <div className="mb-6">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleCivicAuth}
+                className="w-full bg-black text-white p-4 rounded-lg border border-gray-300 shadow-sm transition-all font-medium font-monserrat hover:bg-gray-800"
+                type="button"
+                disabled={isCivicLoading || isLoading || isAuthLoading}
+              >
+                {isCivicLoading ? "Connecting..." : "Sign up with Civic Auth"}
+              </motion.button>
+
+              {isCivicLoading && (
+                <div className="mt-3 flex items-center justify-center text-sm text-gray-500">
+                  <svg
+                    className="animate-spin h-5 w-5 mr-2 text-indigo-600"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Connecting wallet...
+                </div>
+              )}
+            </div>
+
+            <div className="relative flex items-center py-2 mb-6">
+              <div className="flex-grow border-t border-gray-300"></div>
+              <span className="flex-shrink mx-4 text-gray-500 text-sm">or</span>
+              <div className="flex-grow border-t border-gray-300"></div>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Email field */}
               <div>
@@ -308,15 +333,15 @@ export default function Register() {
                     onChange={handleInputChange}
                     className="w-full p-3 pl-12 border text-black font-montserrat border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                     required
-                    disabled={isLoading}
+                    disabled={isLoading || isCivicLoading || isAuthLoading}
                   />
                 </div>
               </div>
 
-              {/* Phone number field */}
+              {/* TikTok username field */}
               <div>
                 <label className="block text-gray-700 font-montserrat font-bold mb-2">
-                  Tiktok Username
+                  TikTok Username
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -330,11 +355,11 @@ export default function Register() {
                     onChange={handleInputChange}
                     className="w-full p-3 pl-12 border font-montserrat border-gray-300 text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                     required
-                    disabled={isLoading}
+                    disabled={isLoading || isCivicLoading || isAuthLoading}
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1 font-medium font-nunito">
-                  Format: 1234567890
+                  Your TikTok username (without @)
                 </p>
               </div>
 
@@ -355,13 +380,14 @@ export default function Register() {
                     onChange={handleInputChange}
                     className="w-full p-3 pl-12 pr-12 border font-montserrat text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                     required
-                    disabled={isLoading}
+                    disabled={isLoading || isCivicLoading || isAuthLoading}
                     minLength={8}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 cursor-pointer p-1"
+                    disabled={isLoading || isCivicLoading || isAuthLoading}
                   >
                     {showPassword ? (
                       <EyeOff className="h-5 w-5" />
@@ -376,53 +402,26 @@ export default function Register() {
                 </p>
               </div>
 
-              {/* Terms and conditions */}
-              <div className="flex items-start mt-4">
-                <div className="flex items-center h-5">
-                  <input
-                    id="terms"
-                    type="checkbox"
-                    checked={agreeToTerms}
-                    onChange={() => setAgreeToTerms(!agreeToTerms)}
-                    className="h-4 w-4 text-indigo-600 font-nunito focus:ring-indigo-500 border-gray-300 rounded"
-                    required
-                  />
-                </div>
-                <div className="ml-3 text-sm">
-                  <label
-                    htmlFor="terms"
-                    className="text-gray-600 font-montserrat font-bold"
-                  >
-                    I agree to the{" "}
-                    <Link
-                      href=""
-                      className="text-indigo-600 hover:text-indigo-800 font-montserrat font-bold"
-                    >
-                      Terms and Conditions
-                    </Link>{" "}
-                    and{" "}
-                    <Link
-                      href=""
-                      className="text-indigo-600 font-montserrat hover:text-indigo-800"
-                    >
-                      Privacy Policy
-                    </Link>
-                  </label>
-                </div>
-              </div>
-
               {/* Submit button */}
               <motion.button
-                whileHover={!isLoading ? { scale: 1.02 } : {}}
-                whileTap={!isLoading ? { scale: 0.98 } : {}}
+                whileHover={
+                  !isLoading && !isCivicLoading && !isAuthLoading
+                    ? { scale: 1.02 }
+                    : {}
+                }
+                whileTap={
+                  !isLoading && !isCivicLoading && !isAuthLoading
+                    ? { scale: 0.98 }
+                    : {}
+                }
                 type="submit"
                 className={`w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 rounded-lg shadow-lg transition-all font-medium mt-6
                   ${
-                    isLoading
+                    isLoading || isCivicLoading || isAuthLoading
                       ? "opacity-70 cursor-not-allowed"
                       : "hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl"
                   }`}
-                disabled={isLoading}
+                disabled={isLoading || isCivicLoading || isAuthLoading}
               >
                 {isLoading ? "Creating Account..." : "Sign Up"}
               </motion.button>
@@ -438,66 +437,6 @@ export default function Register() {
                   Log In
                 </Link>
               </p>
-            </div>
-
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <p className="text-center text-gray-500 text-sm mb-4">
-                Or sign up with
-              </p>
-              <div className="flex justify-center space-x-4">
-                <button className="p-2 rounded-full border border-gray-300 hover:bg-gray-50 transition-colors">
-                  <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M12 0C5.37 0 0 5.37 0 12C0 18.63 5.37 24 12 24C18.63 24 24 18.63 24 12C24 5.37 18.63 0 12 0Z"
-                      fill="#EA4335"
-                    />
-                    <path
-                      d="M12 0C5.37 0 0 5.37 0 12C0 18.63 5.37 24 12 24C18.63 24 24 18.63 24 12C24 5.37 18.63 0 12 0Z"
-                      fill="#FBBB00"
-                    />
-                    <path
-                      d="M12 0C5.37 0 0 5.37 0 12C0 18.63 5.37 24 12 24C18.63 24 24 18.63 24 12C24 5.37 18.63 0 12 0Z"
-                      fill="#34A853"
-                    />
-                    <path
-                      d="M12 0C5.37 0 0 5.37 0 12C0 18.63 5.37 24 12 24C18.63 24 24 18.63 24 12C24 5.37 18.63 0 12 0Z"
-                      fill="#4285F4"
-                    />
-                    <path
-                      d="M12 10V14.5H18.2C17.9 16 17.1 17.25 16 18.2L19.5 20.5C21.6 18.5 22.8 15.5 22.8 12C22.8 11.2 22.7 10.4 22.6 9.7L12 10Z"
-                      fill="white"
-                    />
-                    <path
-                      d="M5.5 14.2L4.7 14.8L2 17L2 17C3.1 20.8 7.1 23.5 12 23.5C15.2 23.5 17.8 22.4 19.5 20.5L16 18.2C15 18.9 13.7 19.3 12 19.3C9 19.3 6.5 17.3 5.7 14.7L5.5 14.2Z"
-                      fill="white"
-                    />
-                    <path
-                      d="M12 4.8C13.7 4.8 15.1 5.4 16.2 6.5L19.2 3.5C17.2 1.6 14.8 0.5 12 0.5C7.1 0.5 3.1 3.2 2 7L5.7 9.8C6.5 7 9 4.8 12 4.8Z"
-                      fill="white"
-                    />
-                  </svg>
-                </button>
-                <button className="p-2 rounded-full border border-gray-300 hover:bg-gray-50 transition-colors">
-                  <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M24 12.073C24 5.446 18.627 0.073 12 0.073C5.373 0.073 0 5.446 0 12.073C0 18.063 4.388 23.027 10.125 23.927V15.542H7.078V12.072H10.125V9.43C10.125 6.423 11.917 4.761 14.658 4.761C15.97 4.761 17.344 4.996 17.344 4.996V7.949H15.83C14.34 7.949 13.875 8.874 13.875 9.823V12.073H17.203L16.67 15.543H13.875V23.927C19.612 23.027 24 18.062 24 12.073Z"
-                      fill="#1877F2"
-                    />
-                    <path
-                      d="M16.671 15.543L17.204 12.073H13.876V9.823C13.876 8.874 14.341 7.949 15.831 7.949H17.345V4.996C17.345 4.996 15.971 4.761 14.659 4.761C11.918 4.761 10.126 6.423 10.126 9.43V12.073H7.079V15.543H10.126V23.927C10.731 24.023 11.359 24.073 12.001 24.073C12.643 24.073 13.271 24.022 13.876 23.927V15.543H16.671Z"
-                      fill="white"
-                    />
-                  </svg>
-                </button>
-                <button className="p-2 rounded-full border border-gray-300 hover:bg-gray-50 transition-colors">
-                  <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M17.05 20.28C16.07 21.23 15 21.08 13.97 20.63C12.88 20.17 11.88 20.15 10.73 20.63C9.29 21.23 8.53 21.04 7.67 20.28C2.83 15.25 3.56 7.53 9.06 7.17C10.57 7.25 11.6 8.04 12.44 8.13C13.71 7.87 14.89 7.05 16.3 7.21C18.08 7.41 19.33 8.34 20.02 9.9C16.35 11.95 17.23 16.83 20.5 18.1C19.94 19.05 19.26 19.97 18.25 20.99C17.93 21.43 17.51 21.87 17.05 20.28V20.28ZM12.31 7.09C12.14 5.2 13.7 3.64 15.5 3.49C15.74 5.6 13.61 7.24 12.31 7.09Z"
-                      fill="#000000"
-                    />
-                  </svg>
-                </button>
-              </div>
             </div>
           </div>
         </motion.div>

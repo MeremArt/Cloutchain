@@ -15,19 +15,23 @@ import { UserButton, useUser } from "@civic/auth-web3/react";
 import { API_ENDPOINTS } from "../../config/api";
 
 export default function Login() {
+  const userContext = useUser();
+  const { user, isLoading: isCivicLoading, signIn } = userContext;
+
   const router = useRouter();
-  const { user, signIn } = useUser(); // Use destructuring to get both user and signIn
+
   const [formData, setFormData] = useState({
     tiktokUsername: "",
     password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [isCivicLoading, setIsCivicLoading] = useState(false);
+  const [civicButtonClicked, setCivicButtonClicked] = useState(false);
 
   // Handle Civic Auth logic
   useEffect(() => {
     // If user is authenticated with Civic
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     if (user && userHasWallet(user)) {
       // Store user data from Civic Auth
       if (user) {
@@ -46,29 +50,32 @@ export default function Login() {
 
       // User is authenticated with a wallet, redirect to dashboard
       router.push("/dashboard/profile");
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     } else if (user && !userHasWallet(user)) {
       // User is authenticated but doesn't have a wallet, create one
       const createWallet = async () => {
         try {
-          toast.loading("Setting up your wallet...");
-          // await user.createWallet();
-          toast.success("Wallet created successfully!");
+          console.log("Setting up your wallet...");
+          // Check if createWallet is available in the context
+          if ("createWallet" in userContext) {
+            await userContext.createWallet();
+          }
 
+          console.log("Wallet created successfully!");
           // Store login method in localStorage
           localStorage.setItem("loginMethod", "civic");
 
           router.push("/dashboard/profile");
         } catch (error) {
           console.error("Error creating wallet:", error);
-          toast.error("Failed to create wallet");
-          setIsCivicLoading(false);
+          setCivicButtonClicked(false);
         }
       };
       createWallet();
     }
-  }, [user, router]);
+  }, [user, router, userContext]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -76,25 +83,23 @@ export default function Login() {
     }));
   };
 
-  const handleCivicAuth = (e: React.MouseEvent) => {
+  const handleCivicAuth = () => {
     e.preventDefault(); // Prevent any form submission
-    setIsCivicLoading(true);
+    setCivicButtonClicked(true);
 
     // Find and click the hidden Civic button
-    const civicButton = document.querySelector(
-      ".civic-user-button"
-    ) as HTMLElement;
+    const civicButton = document.querySelector(".civic-user-button");
 
     if (civicButton) {
       civicButton.click();
       signIn();
     } else {
       toast.error("Civic Auth not available");
-      setIsCivicLoading(false);
+      setCivicButtonClicked(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async () => {
     e.preventDefault();
 
     // Don't proceed if Civic Auth is loading
@@ -164,8 +169,7 @@ export default function Login() {
       toast.dismiss(loadingToast);
       let errorMessage = "An error occurred";
       if (axios.isAxiosError(error)) {
-        errorMessage =
-          (error.response?.data?.message as string) || error.message;
+        errorMessage = error.response?.data?.message || error.message;
       } else if (error instanceof Error) {
         errorMessage = error.message;
       }
@@ -241,9 +245,11 @@ export default function Login() {
                 onClick={handleCivicAuth}
                 className="w-full bg-black text-white p-4 rounded-lg border border-gray-300 shadow-sm transition-all font-medium font-monserrat hover:bg-gray-800"
                 type="button"
-                disabled={isCivicLoading || isLoading}
+                disabled={isCivicLoading || isLoading || civicButtonClicked}
               >
-                {isCivicLoading ? "Connecting..." : "Sign in with Civic Auth"}
+                {isCivicLoading || civicButtonClicked
+                  ? "Connecting..."
+                  : "Sign in with Civic Auth"}
               </motion.button>
 
               {/* Hidden original UserButton */}
@@ -251,7 +257,7 @@ export default function Login() {
                 <UserButton className="civic-user-button" />
               </div>
 
-              {(isCivicLoading || user?.isLoading) && (
+              {(isCivicLoading || civicButtonClicked || user?.isLoading) && (
                 <div className="mt-3 flex items-center justify-center text-sm text-gray-500">
                   <svg
                     className="animate-spin h-5 w-5 mr-2 text-indigo-600"
@@ -288,7 +294,7 @@ export default function Login() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-gray-700 font-montserrat font-bold mb-2">
-                  Social handle
+                  Social ID
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">

@@ -11,19 +11,14 @@ import React, { ReactNode, useEffect, useState } from "react";
 import {
   X,
   Menu,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Twitter,
   Loader,
   Home,
   User,
   Wallet,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   CreditCard,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Link as LinkIcon,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Tag,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   BarChart,
   DoorOpen,
   Gem,

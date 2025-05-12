@@ -8,8 +8,8 @@ import {
   MessageSquare,
 } from "lucide-react";
 import Image from "next/image";
-import { Tweet } from "@/app/types/tweet.types";
-import { GameResult } from "@/app/types/tweet.types";
+import { Tweet } from "@/app/interface/tweet.interface";
+import { GameResult } from "@/app/interface/tweet.interface";
 interface Metric {
   id: "likes" | "retweets" | "replies";
   label: string;

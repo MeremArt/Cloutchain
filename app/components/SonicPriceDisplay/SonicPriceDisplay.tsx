@@ -1,5 +1,5 @@
 import { DollarSign, RefreshCw } from "lucide-react";
-import { SonicPriceDisplayProps } from "@/app/types/user.types";
+import { SonicPriceDisplayProps } from "@/app/interface/user.interface";
 
 const SonicPriceDisplay = ({
   sonicToUsdRate,

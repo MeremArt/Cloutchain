@@ -7,9 +7,22 @@ export const API_ENDPOINTS = {
   AUTH: {
     SIGNUP: `${API_BASE_URL}/api/auth/register`,
     LOGIN: `${API_BASE_URL}/api/auth/login`,
+    ME: `${API_BASE_URL}/auth/me`,
+    CONNECT_WALLET: `${API_BASE_URL}/auth/connect-wallet`,
   },
   PROFILE: {
     BALANCE: `${API_BASE_URL}/api/transactions/balance/`,
+    HISTORY: `${API_BASE_URL}/profile/transactions/`,
+    UPDATE_TIKTOK: `${API_BASE_URL}/auth/update-tiktok-username`,
+  },
+  TRANSACTIONS: {
+    SEND: `${API_BASE_URL}/transactions/send`,
+    STATUS: `${API_BASE_URL}/transactions/status/`,
+    HISTORY: `${API_BASE_URL}/transaction`,
+  },
+  WALLETS: {
+    CHECK_TOKEN: `${API_BASE_URL}/wallets/token-account/`,
+    CREATE_TOKEN: `${API_BASE_URL}/wallets/create-token/`,
   },
   BANK: {
     FETCH: `${API_BASE_URL}/bank-account`,
@@ -27,9 +40,6 @@ export const API_ENDPOINTS = {
     BANK: `${API_BASE_URL}/wallet`,
   },
 
-  TRANSACTION: {
-    HISTORY: `${API_BASE_URL}/transaction`,
-  },
   // Add other endpoint categories as needed
 } as const;
 

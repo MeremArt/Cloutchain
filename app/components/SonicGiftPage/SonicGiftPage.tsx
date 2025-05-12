@@ -16,7 +16,7 @@ import {
   getAssociatedTokenAddress,
 } from "@solana/spl-token";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
-import { UserData } from "@/app/types/user.types";
+import { UserData } from "@/app/interface/user.interface";
 
 interface BalanceData {
   balances: {

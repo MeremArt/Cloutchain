@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -18,7 +19,9 @@ import { API_ENDPOINTS } from "../../../config/api";
 import { useUser } from "@civic/auth-web3/react";
 
 export default function ProfilePage() {
-  const { user, solana } = useUser();
+  const userContext = useUser();
+  const { user } = userContext;
+  const solana = "solana" in userContext ? userContext.solana : null;
   const [userData, setUserData] = useState<UserData | null>(null);
   const [balanceData, setBalanceData] = useState<BalanceData | null>(null);
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
@@ -139,7 +142,7 @@ export default function ProfilePage() {
   };
 
   // Format wallet address for display
-  const formatWalletAddress = (address) => {
+  const formatWalletAddress = (address: string | any[]) => {
     if (!address) return "No wallet connected";
     return `${address.slice(0, 6)}…${address.slice(-4)}`;
   };
@@ -247,7 +250,7 @@ export default function ProfilePage() {
                       <div>
                         <p className="text-sm text-gray-400">Social handle</p>
                         <p className="text-white">
-                          {profileData.tiktokUsername || "Not connected"}
+                          {userData.tiktokUsername || "Not connected"}
                         </p>
                       </div>
                     </div>

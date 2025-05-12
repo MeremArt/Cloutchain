@@ -16,9 +16,9 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import useWalletDeepLink from "@/app/components/DeepLink/DeepLink";
 import { API_ENDPOINTS } from "../../../config/api";
 import { HermesClient } from "@pythnetwork/hermes-client";
-import { UserData } from "@/app/types/user.types";
-import { WithdrawalMethod } from "@/app/types/user.types";
-import { BalanceData } from "@/app/types/user.types";
+import { UserData } from "@/app/interface/user.interface";
+import { WithdrawalMethod } from "@/app/interface/user.interface";
+import { BalanceData } from "@/app/interface/user.interface";
 import SonicBalanceDisplay from "@/app/components/SonicBalanceDisplay/SonicBalanceDisplay";
 // Replace with Sonic's actual price feed ID when available
 const SONIC_PRICE_FEED_ID =
