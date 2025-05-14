@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   User,
   Mail,
@@ -30,8 +30,8 @@ export default function ProfilePage() {
   >(null);
 
   // Determine which profile data to use based on login method
-  const profileData =
-    loginMethod === "civic"
+  const profileData = useMemo(() => {
+    return loginMethod === "civic"
       ? {
           email: user?.email || "No email available",
           walletAddress: solana?.address || "",
@@ -44,7 +44,16 @@ export default function ProfilePage() {
           tiktokUsername: userData?.tiktokUsername || "",
           id: userData?.id || "",
         };
+  }, [
+    loginMethod,
+    user?.email,
+    user?.id,
+    user?.username,
+    solana?.address,
+    userData,
+  ]);
 
+  // Initialization effect - runs once and on specific user data changes
   useEffect(() => {
     // Get user data from localStorage
     const storedData = localStorage.getItem("userData");
@@ -56,10 +65,27 @@ export default function ProfilePage() {
     const storedLoginMethod = localStorage.getItem("loginMethod");
     if (storedLoginMethod === "civic") {
       setLoginMethod("civic");
+    } else if (localStorage.getItem("jwt")) {
+      setLoginMethod("traditional");
+    } else if (user && solana?.address) {
+      // Fallback detection if localStorage method isn't set
+      setLoginMethod("civic");
+      // Store for future reference
+      localStorage.setItem("loginMethod", "civic");
+    }
+  }, [user, solana?.address]);
 
-      // If logged in with Civic but no TikTok username in userData
-      // Store Civic user data in localStorage for consistency
-      if (user && (!userData || !userData.tiktokUsername)) {
+  // Handle Civic user data storage - separate effect to avoid circular dependencies
+  useEffect(() => {
+    // Only run this logic when we have confirmed Civic login and user data
+    if (loginMethod === "civic" && user && solana?.address) {
+      // Check if we need to update stored data
+      const shouldUpdateStorage =
+        !userData ||
+        !userData.tiktokUsername ||
+        userData.walletAddress !== solana.address;
+
+      if (shouldUpdateStorage) {
         const civicUserData = {
           id: user.id || "",
           email: user.email || "",
@@ -70,28 +96,57 @@ export default function ProfilePage() {
         localStorage.setItem("userData", JSON.stringify(civicUserData));
         setUserData(civicUserData);
       }
-    } else if (localStorage.getItem("jwt")) {
-      setLoginMethod("traditional");
-    } else if (user && solana?.address) {
-      // Fallback detection if localStorage method isn't set
-      setLoginMethod("civic");
-      // Store for future reference
-      localStorage.setItem("loginMethod", "civic");
-
-      // Store Civic user data
-      const civicUserData = {
-        id: user.id || "",
-        email: user.email || "",
-        tiktokUsername: user.username || user.email?.split("@")[0] || "", // Use username or first part of email
-        walletAddress: solana?.address || "",
-      };
-
-      localStorage.setItem("userData", JSON.stringify(civicUserData));
-      setUserData(civicUserData);
     }
-  }, [user, solana?.address, userData]);
+  }, [loginMethod, user, solana?.address, userData]);
 
-  const fetchBalance = useCallback(async () => {
+  // Fetch wallet balance directly for Civic Auth users
+  const fetchDirectSolanaBalance = useCallback(async () => {
+    if (!profileData.walletAddress) {
+      toast.error("Wallet address not available");
+      return;
+    }
+
+    setIsLoadingBalance(true);
+    try {
+      console.log("Fetching balance for wallet:", profileData.walletAddress);
+
+      // Use the correct endpoint from your API_ENDPOINTS configuration
+      const response = await fetch(
+        `${API_ENDPOINTS.WALLETS.GET_BALANCE}${profileData.walletAddress}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch balance: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Balance data received:", data);
+
+      // Set the balance data with the expected format
+      setBalanceData({
+        balances: {
+          sol: data.balance || 0,
+        },
+      });
+
+      toast.success("Balance updated");
+    } catch (error) {
+      console.error("Error fetching Solana balance:", error);
+      toast.error("Failed to fetch wallet balance");
+
+      // Set a default balance to avoid UI issues
+      setBalanceData({
+        balances: {
+          sol: 0,
+        },
+      });
+    } finally {
+      setIsLoadingBalance(false);
+    }
+  }, [profileData.walletAddress]);
+
+  // Original fetchBalance function (for TikTok username based lookup)
+  const fetchTikTokBalance = useCallback(async () => {
     if (!profileData.tiktokUsername) {
       toast.error("TikTok username not available");
       return;
@@ -99,36 +154,95 @@ export default function ProfilePage() {
 
     setIsLoadingBalance(true);
     try {
+      console.log(
+        "Fetching balance for TikTok username:",
+        profileData.tiktokUsername
+      );
+
       const response = await fetch(
         `${API_ENDPOINTS.PROFILE.BALANCE}${profileData.tiktokUsername}`
       );
 
       if (!response.ok) {
-        throw new Error("Network response was not ok");
+        throw new Error(`Failed to fetch balance: ${response.status}`);
       }
 
-      const data: BalanceData = await response.json();
+      const data = await response.json();
+      console.log("TikTok balance data received:", data);
+
       setBalanceData(data);
+      toast.success("Balance updated");
     } catch (error) {
       console.error("Error fetching balance:", error);
       toast.error("Failed to fetch balance");
+
+      // Set a default balance to avoid UI issues
+      setBalanceData({
+        balances: {
+          sol: 0,
+        },
+      });
     } finally {
       setIsLoadingBalance(false);
     }
   }, [profileData.tiktokUsername]);
 
+  // Combined fetch balance function that decides which method to use
+  const fetchBalance = useCallback(async () => {
+    console.log("Fetch balance called. Login method:", loginMethod);
+    console.log("Wallet address:", profileData.walletAddress);
+    console.log("TikTok username:", profileData.tiktokUsername);
+
+    if (loginMethod === "civic" && profileData.walletAddress) {
+      await fetchDirectSolanaBalance();
+    } else if (profileData.tiktokUsername) {
+      await fetchTikTokBalance();
+    } else {
+      toast.error("No wallet address or TikTok username available");
+    }
+  }, [
+    loginMethod,
+    profileData.walletAddress,
+    profileData.tiktokUsername,
+    fetchDirectSolanaBalance,
+    fetchTikTokBalance,
+  ]);
+
   useEffect(() => {
-    // Only fetch balance if tiktokUsername is available
-    if (profileData.tiktokUsername) {
+    // Only fetch balance if we have the necessary info
+    if (
+      (loginMethod === "civic" && profileData.walletAddress) ||
+      profileData.tiktokUsername
+    ) {
       fetchBalance();
     }
-  }, [fetchBalance, profileData.tiktokUsername]);
+  }, [
+    fetchBalance,
+    loginMethod,
+    profileData.walletAddress,
+    profileData.tiktokUsername,
+  ]);
 
-  const copySonicLink = () => {
-    if (profileData.tiktokUsername) {
-      const sonicLink = `https://www.cloutchain.xyz//gift?id=${profileData.tiktokUsername}`;
-      navigator.clipboard.writeText(sonicLink);
-      toast.success("Sonic gift link copied!");
+  const copySolanaLink = () => {
+    if (loginMethod === "civic" && profileData.walletAddress) {
+      // For Civic Auth wallet users, check if the address looks like a valid Solana wallet
+      // and use it directly in the id parameter
+      if (profileData.walletAddress && profileData.walletAddress.length >= 32) {
+        const solanaLink = `https://www.cloutchain.xyz/gift?id=${profileData.walletAddress}`;
+        navigator.clipboard.writeText(solanaLink);
+        toast.success("Solana gift link copied!");
+        console.log("Generated smart gift link with wallet in id:", solanaLink);
+      } else {
+        toast.error("Invalid wallet address format");
+      }
+    } else if (profileData.tiktokUsername) {
+      // For traditional users with a TikTok username
+      const solanaLink = `https://www.cloutchain.xyz/gift?id=${profileData.tiktokUsername}`;
+      navigator.clipboard.writeText(solanaLink);
+      toast.success("Solana gift link copied!");
+      console.log("Generated gift link with TikTok username:", solanaLink);
+    } else {
+      toast.error("No valid gift link can be generated");
     }
   };
 
@@ -176,8 +290,7 @@ export default function ProfilePage() {
               </button>
             </div>
             <div className="text-3xl font-bold font-orbitron text-white">
-              {balanceData ? balanceData.balances.sonic.toFixed(2) : "0.00"}{" "}
-              $SONIC
+              {balanceData ? balanceData.balances.sol.toFixed(2) : "0.00"} $SOL
             </div>
           </div>
 
@@ -221,11 +334,11 @@ export default function ProfilePage() {
                       </div>
                     </div>
                     <button
-                      onClick={copySonicLink}
+                      onClick={copySolanaLink}
                       className="flex items-center mt-2 text-yellow-400 hover:text-yellow-300 transition-colors text-sm bg-gray-700 px-2 py-1 rounded"
                     >
                       <Gift className="w-4 h-4 mr-1" />
-                      <span>Copy Sonic Gift Link</span>
+                      <span>Copy Solana Gift Link</span>
                     </button>
                   </div>
                 </div>

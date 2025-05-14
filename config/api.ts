@@ -23,6 +23,7 @@ export const API_ENDPOINTS = {
   WALLETS: {
     CHECK_TOKEN: `${API_BASE_URL}/wallets/token-account/`,
     CREATE_TOKEN: `${API_BASE_URL}/wallets/create-token/`,
+    GET_BALANCE: `${API_BASE_URL}/api/transactions/wallets/balance/`,
   },
   BANK: {
     FETCH: `${API_BASE_URL}/bank-account`,

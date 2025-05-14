@@ -13,9 +13,7 @@ const SonicPriceDisplay = ({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <DollarSign className="w-6 h-6 text-yellow-400 mr-2" />
-          <h3 className="text-lg font-semibold text-white">
-            $SONIC Live Price
-          </h3>
+          <h3 className="text-lg font-semibold text-white">$SOL Live Price</h3>
         </div>
         <button
           className="p-2 hover:bg-gray-700 rounded-full transition-colors"
@@ -46,7 +44,7 @@ const SonicPriceDisplay = ({
           <div className="flex justify-between mb-1">
             <span className="text-sm text-gray-400">Exchange Rate:</span>
             <span className="text-sm text-white">
-              1 $SONIC = ${sonicToUsdRate.toFixed(4)}
+              1 $SOL = ${sonicToUsdRate.toFixed(4)}
             </span>
           </div>
           <div className="flex justify-between">

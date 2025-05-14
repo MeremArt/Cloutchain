@@ -20,11 +20,11 @@ import { UserData } from "@/app/interface/user.interface";
 import { WithdrawalMethod } from "@/app/interface/user.interface";
 import { BalanceData } from "@/app/interface/user.interface";
 import SonicBalanceDisplay from "@/app/components/SonicBalanceDisplay/SonicBalanceDisplay";
-// Replace with Sonic's actual price feed ID when available
+//  price feed ID when available
 const SONIC_PRICE_FEED_ID =
-  "0xb2748e718cf3a75b0ca099cb467aea6aa8f7d960b381b3970769b5a2d6be26dc";
+  "0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d";
 import SonicPriceDisplay from "@/app/components/SonicPriceDisplay/SonicPriceDisplay";
-
+import { useUser } from "@civic/auth-web3/react";
 const WithdrawalPage = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [balanceData, setBalanceData] = useState<BalanceData | null>(null);
@@ -52,12 +52,17 @@ const WithdrawalPage = () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const { initiateDeepLink } = useWalletDeepLink();
+  const userContext = useUser();
+  const { user } = userContext;
+  const solana = "solana" in userContext ? userContext.solana : null;
   // Min and max withdrawal
   // Derived values
   const SONIC_TO_USD_RATE = sonicPrice;
   const USD_TO_NGN_RATE = usdToNgnRate;
   const SONIC_TO_NGN_RATE = SONIC_TO_USD_RATE * USD_TO_NGN_RATE;
-
+  const [loginMethod, setLoginMethod] = useState<
+    "civic" | "traditional" | null
+  >(null);
   // Min and max withdrawal
   const MIN_WITHDRAWAL = 5; // 10 SONIC
   const MIN_WITHDRAWAL_NGN = MIN_WITHDRAWAL * SONIC_TO_NGN_RATE;
@@ -79,6 +84,48 @@ const WithdrawalPage = () => {
       description: "Withdraw to your crypto wallet",
     },
   ];
+  useEffect(() => {
+    // Get user data from localStorage
+    const storedData = localStorage.getItem("userData");
+    if (storedData) {
+      setUserData(JSON.parse(storedData));
+    }
+
+    // Determine login method from localStorage
+    const storedLoginMethod = localStorage.getItem("loginMethod");
+    if (storedLoginMethod === "civic") {
+      setLoginMethod("civic");
+    } else if (localStorage.getItem("jwt")) {
+      setLoginMethod("traditional");
+    } else if (user && solana?.address) {
+      // Fallback detection if localStorage method isn't set
+      setLoginMethod("civic");
+      // Store for future reference
+      localStorage.setItem("loginMethod", "civic");
+    }
+  }, [user, solana?.address]);
+  useEffect(() => {
+    // Only run this logic when we have confirmed Civic login and user data
+    if (loginMethod === "civic" && user && solana?.address) {
+      // Check if we need to update stored data
+      const shouldUpdateStorage =
+        !userData ||
+        !userData.tiktokUsername ||
+        userData.walletAddress !== solana.address;
+
+      if (shouldUpdateStorage) {
+        const civicUserData = {
+          id: user.id || "",
+          email: user.email || "",
+          tiktokUsername: user.username || user.email?.split("@")[0] || "", // Use username or first part of email
+          walletAddress: solana?.address || "",
+        };
+
+        localStorage.setItem("userData", JSON.stringify(civicUserData));
+        setUserData(civicUserData);
+      }
+    }
+  }, [loginMethod, user, solana?.address, userData]);
 
   useEffect(() => {
     const storedData = localStorage.getItem("userData");
@@ -93,7 +140,7 @@ const WithdrawalPage = () => {
 
   const processWithdrawal = async () => {
     if (!validateWithdrawal()) return;
-    const initialBalance = balanceData?.balances.sonic || 0;
+    const initialBalance = balanceData?.balances.sol || 0;
     setIsProcessing(true);
     try {
       // Prepare request data
@@ -520,7 +567,7 @@ const WithdrawalPage = () => {
 
               <div className="bg-gray-800 p-3 rounded flex items-center justify-between mb-3">
                 <span className="text-gray-400 text-sm">Amount:</span>
-                <span className="text-white">{amount} $SONIC</span>
+                <span className="text-white">{amount} $SOL</span>
               </div>
 
               <div className="bg-gray-800 p-3 rounded flex items-center justify-between mb-3">
@@ -573,7 +620,7 @@ const WithdrawalPage = () => {
                     </span>
                     {amountValue < MIN_WITHDRAWAL && (
                       <span className="text-sm text-red-400">
-                        Minimum: {MIN_WITHDRAWAL} $SONIC
+                        Minimum: {MIN_WITHDRAWAL} $SOL
                       </span>
                     )}
                   </div>

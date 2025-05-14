@@ -41,8 +41,7 @@ const SonicBalanceDisplay = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <div className="text-3xl font-bold font-orbitron text-white">
-            {balanceData ? balanceData.balances.sonic.toFixed(2) : "0.00"}{" "}
-            $SONIC
+            {balanceData ? balanceData.balances.sol.toFixed(2) : "0.00"} $SOL
           </div>
           <div className="text-gray-400 mt-1">
             ≈ ₦

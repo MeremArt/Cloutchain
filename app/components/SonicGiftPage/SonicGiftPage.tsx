@@ -20,22 +20,41 @@ import { UserData } from "@/app/interface/user.interface";
 
 interface BalanceData {
   balances: {
-    sonic: number;
+    sol: number;
     [key: string]: number;
   };
 }
 
-// Sonic token mint address on Solana (replace with actual token mint address)
-const SONIC_TOKEN_MINT = new PublicKey(
-  "SonicxvLud67EceaEzCLRnMTBqzYUUYNr93DBkBdDES"
-); // Example SPL token mint
+// Solana token mint address (SPL token)
+const SOLANA_TOKEN_MINT = new PublicKey(
+  "So11111111111111111111111111111111111111112"
+); // Native SOL token
 const SOLANA_RPC_URL =
   process.env.SOLANA_RPC_URL ||
   "https://dry-misty-surf.solana-mainnet.quiknode.pro/3f5a226933e73f33db5ce840c220268713b4419f";
 
-export default function SonicGiftPage() {
+// Helper function to check if a string might be a wallet address
+const isLikelyWalletAddress = (id: string): boolean => {
+  // Solana addresses are 32-44 characters long and base58 encoded
+  // This is a simple check - you might want to improve it
+  return (
+    id.length >= 32 &&
+    id.length <= 44 &&
+    /^[1-9A-HJ-NP-Za-km-z]+$/.test(id) &&
+    !id.includes(".")
+  );
+};
+
+export default function SolanaGiftPage() {
   const searchParams = useSearchParams();
-  const tiktokUsername = searchParams.get("id");
+  const idParam = searchParams.get("id"); // This might be username OR address
+  const walletAddress = searchParams.get("wallet"); // Explicit wallet parameter
+
+  // Determine if the id parameter is a wallet address or username
+  const [recipientType, setRecipientType] = useState<
+    "username" | "wallet" | null
+  >(null);
+  const [recipientId, setRecipientId] = useState<string | null>(null);
 
   // AppKit hooks
   const { publicKey, connected, wallet, signTransaction } = useWallet();
@@ -56,59 +75,157 @@ export default function SonicGiftPage() {
   // Predefined amounts for quick selection
   const predefinedAmounts = ["5", "10", "25", "50", "100", "Custom"];
 
+  // Parse the parameters to determine recipient type
   useEffect(() => {
-    // Fetch user data by TikTok username
+    // First check for explicit wallet parameter
+    if (walletAddress) {
+      console.log("Using explicit wallet parameter:", walletAddress);
+      setRecipientType("wallet");
+      setRecipientId(walletAddress);
+    }
+    // Then check if id parameter might be a wallet address
+    else if (idParam && isLikelyWalletAddress(idParam)) {
+      console.log("ID parameter appears to be a wallet address:", idParam);
+      setRecipientType("wallet");
+      setRecipientId(idParam);
+    }
+    // Otherwise, assume it's a username
+    else if (idParam) {
+      console.log("Using ID parameter as username:", idParam);
+      setRecipientType("username");
+      setRecipientId(idParam);
+    }
+    // No valid parameters found
+    else {
+      console.log("No valid recipient parameters found");
+      setRecipientType(null);
+      setRecipientId(null);
+    }
+  }, [idParam, walletAddress]);
+
+  // Fetch user data based on determined recipient type
+  useEffect(() => {
+    if (!recipientId || !recipientType) {
+      console.log("No recipient information available to fetch data");
+      setIsLoadingUserData(false);
+      return;
+    }
+
     const fetchUserData = async () => {
-      if (!tiktokUsername) return;
-
       setIsLoadingUserData(true);
+
       try {
-        // Use the appropriate endpoint to fetch user data by TikTok username
-        const response = await fetch(
-          `${API_ENDPOINTS.PROFILE.BALANCE}${tiktokUsername}`
-        );
+        console.log(`Fetching user data as ${recipientType}:`, recipientId);
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch user data");
+        // Handle wallet address (direct or detected from id)
+        if (recipientType === "wallet") {
+          // Fetch balance using wallet endpoint
+          try {
+            const response = await fetch(
+              `${API_ENDPOINTS.WALLETS.GET_BALANCE}${recipientId}`
+            );
+
+            if (response.ok) {
+              const balanceInfo = await response.json();
+              console.log("Wallet balance data:", balanceInfo);
+
+              setBalanceData({
+                balances: {
+                  sol: balanceInfo.balance || 0,
+                },
+              });
+            } else {
+              console.warn("Wallet balance fetch failed:", response.status);
+            }
+          } catch (error) {
+            console.error("Error fetching wallet balance:", error);
+          }
+
+          // Try to find registered user for this wallet
+          try {
+            const userResponse = await fetch(
+              `/api/users/wallet/${recipientId}`
+            );
+
+            if (userResponse.ok) {
+              const userData = await userResponse.json();
+              console.log("Found registered user for wallet:", userData);
+
+              setUserData({
+                id: userData.id || recipientId.substring(0, 8),
+                tiktokUsername: userData.tiktokUsername || "Cloutchain User",
+                walletAddress: recipientId,
+                email: userData.email || "",
+              });
+            } else {
+              // Create minimal user profile for wallet
+              console.log("No registered user found, creating basic profile");
+
+              setUserData({
+                id: recipientId.substring(0, 8),
+                tiktokUsername: "Solana User",
+                walletAddress: recipientId,
+                email: "",
+              });
+            }
+          } catch (error) {
+            console.log(
+              "Error finding user for wallet, using minimal profile:",
+              error
+            );
+            setUserData({
+              id: recipientId.substring(0, 8),
+              tiktokUsername: "Solana User",
+              walletAddress: recipientId,
+              email: "",
+            });
+          }
         }
+        // Handle username
+        else if (recipientType === "username") {
+          try {
+            const response = await fetch(
+              `${API_ENDPOINTS.PROFILE.BALANCE}${recipientId}`
+            );
 
-        const data = await response.json();
-        setUserData(data);
+            if (!response.ok) {
+              throw new Error(`Failed to fetch user data: ${response.status}`);
+            }
 
-        // Now fetch the user's balance
-        await fetchBalance(tiktokUsername);
+            const data = await response.json();
+            console.log("Username data:", data);
+
+            // Update user data
+            setUserData({
+              id: data.id || recipientId,
+              tiktokUsername: recipientId,
+              walletAddress: data.walletAddress || "",
+              email: data.email || "",
+            });
+
+            // Set balance data
+            if (data.balances && data.balances.sol !== undefined) {
+              setBalanceData({
+                balances: {
+                  sol: data.balances.sol,
+                },
+              });
+            }
+          } catch (error) {
+            console.error("Error fetching data by username:", error);
+            toast.error("Failed to load user data");
+          }
+        }
       } catch (error) {
-        console.error("Error fetching user data:", error);
+        console.error("Error in fetchUserData:", error);
         toast.error("Failed to load recipient data");
       } finally {
         setIsLoadingUserData(false);
       }
     };
 
-    if (tiktokUsername) {
-      fetchUserData();
-    } else {
-      setIsLoadingUserData(false);
-    }
-  }, [tiktokUsername]);
-
-  const fetchBalance = async (username: string) => {
-    try {
-      const response = await fetch(
-        `${API_ENDPOINTS.PROFILE.BALANCE}${username}`
-      );
-
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-
-      const data: BalanceData = await response.json();
-      setBalanceData(data);
-    } catch (error) {
-      console.error("Error fetching balance:", error);
-      toast.error("Failed to fetch balance");
-    }
-  };
+    fetchUserData();
+  }, [recipientId, recipientType]);
 
   const handleConnectWallet = () => {
     try {
@@ -122,7 +239,7 @@ export default function SonicGiftPage() {
     }
   };
 
-  const handleSendSonic = async () => {
+  const handleSendSolana = async () => {
     if (!connected || !publicKey || !wallet) {
       toast.error("Please connect your wallet first");
       return;
@@ -149,7 +266,7 @@ export default function SonicGiftPage() {
       const connection = new Connection(SOLANA_RPC_URL);
 
       // Convert amount to lamports (or the token's smallest unit)
-      // Assuming 9 decimals for SPL tokens - adjust if SONIC has different decimals
+      // Solana uses 9 decimals
       const amountInSmallestUnit = amountValue * Math.pow(10, 9);
 
       // Get sender and recipient token account addresses
@@ -157,12 +274,12 @@ export default function SonicGiftPage() {
       const recipientPublicKey = new PublicKey(userData.walletAddress);
 
       const senderTokenAccount = await getAssociatedTokenAddress(
-        SONIC_TOKEN_MINT,
+        SOLANA_TOKEN_MINT,
         senderPublicKey
       );
 
       const recipientTokenAccount = await getAssociatedTokenAddress(
-        SONIC_TOKEN_MINT,
+        SOLANA_TOKEN_MINT,
         recipientPublicKey
       );
 
@@ -198,21 +315,65 @@ export default function SonicGiftPage() {
       setTransactionSignature(signature);
 
       toast.success(
-        `Successfully sent ${amount} $SONIC to @${userData.tiktokUsername}!`
+        `Successfully sent ${amount} $SOL to ${userData.tiktokUsername}!`
       );
 
       // Reset amount after successful send
       setAmount("10");
 
       // Refresh recipient's balance after sending
-      await fetchBalance(userData.tiktokUsername);
+      if (recipientType === "username" && recipientId) {
+        await fetchBalance(recipientId);
+      } else if (userData.walletAddress) {
+        await fetchWalletBalance(userData.walletAddress);
+      }
     } catch (error) {
-      console.error("Error sending SONIC:", error);
+      console.error("Error sending SOL:", error);
       toast.error(
         error instanceof Error ? error.message : "Transaction failed"
       );
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchBalance = async (username: string) => {
+    try {
+      const response = await fetch(
+        `${API_ENDPOINTS.PROFILE.BALANCE}${username}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const data: BalanceData = await response.json();
+      setBalanceData(data);
+    } catch (error) {
+      console.error("Error fetching balance:", error);
+      toast.error("Failed to fetch balance");
+    }
+  };
+
+  const fetchWalletBalance = async (address: string) => {
+    try {
+      const response = await fetch(
+        `${API_ENDPOINTS.WALLETS.GET_BALANCE}${address}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const data = await response.json();
+      setBalanceData({
+        balances: {
+          sol: data.balance || 0,
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching wallet balance:", error);
+      toast.error("Failed to fetch balance");
     }
   };
 
@@ -242,9 +403,9 @@ export default function SonicGiftPage() {
     // Reference: https://docs.solanapay.com/spec
     return `solana:${
       userData.walletAddress
-    }?amount=${amount}&spl-token=${SONIC_TOKEN_MINT.toString()}&reference=${
+    }?amount=${amount}&spl-token=${SOLANA_TOKEN_MINT.toString()}&reference=${
       userData.id
-    }&label=Sonic%20Gift&message=Gift%20for%20${userData.tiktokUsername}`;
+    }&label=Solana%20Gift&message=Gift%20for%20${userData.tiktokUsername}`;
   };
 
   return (
@@ -252,7 +413,7 @@ export default function SonicGiftPage() {
       {/* Header */}
 
       <main className="container mx-auto p-6 max-w-2xl">
-        {!tiktokUsername ? (
+        {!recipientId ? (
           <div className="bg-gray-800 rounded-xl p-8 shadow-lg text-center">
             <div className="flex flex-col items-center">
               <Gift className="w-20 h-20 text-gray-600 mb-4" />
@@ -283,7 +444,7 @@ export default function SonicGiftPage() {
             {/* Recipient Card */}
             <div className="bg-gray-800 rounded-xl p-6 shadow-lg mb-8">
               <h2 className="text-xl font-semibold mb-4 text-center">
-                Gift $SONIC to
+                Gift $SOL to
               </h2>
 
               <div className="flex items-center justify-center mb-6">
@@ -319,7 +480,7 @@ export default function SonicGiftPage() {
                     </h4>
                   </div>
                   <p className="text-xl font-bold text-white">
-                    {balanceData.balances.sonic.toFixed(2)} $SONIC
+                    {balanceData.balances.sol.toFixed(2)} $SOL
                   </p>
                 </div>
               )}
@@ -376,7 +537,7 @@ export default function SonicGiftPage() {
                     >
                       {presetAmount === "Custom"
                         ? presetAmount
-                        : `${presetAmount} $SONIC`}
+                        : `${presetAmount} $SOL`}
                     </button>
                   ))}
                 </div>
@@ -394,7 +555,7 @@ export default function SonicGiftPage() {
                     className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                   />
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <span className="text-gray-400">$SONIC</span>
+                    <span className="text-gray-400">$SOL</span>
                   </div>
                 </div>
 
@@ -409,7 +570,7 @@ export default function SonicGiftPage() {
                   </button>
 
                   <button
-                    onClick={connected ? handleSendSonic : handleConnectWallet}
+                    onClick={connected ? handleSendSolana : handleConnectWallet}
                     disabled={isLoading}
                     className="flex items-center justify-center py-3 px-4 bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -420,7 +581,7 @@ export default function SonicGiftPage() {
                         {connected ? (
                           <>
                             <Send className="w-5 h-5 mr-2" />
-                            Send $SONIC
+                            Send $SOL
                           </>
                         ) : (
                           <>
@@ -439,7 +600,7 @@ export default function SonicGiftPage() {
             {showQR && (
               <div className="bg-gray-800 rounded-xl p-6 shadow-lg text-center">
                 <h3 className="text-lg font-semibold mb-4">
-                  Scan to send {amount} $SONIC
+                  Scan to send {amount} $SOL
                 </h3>
 
                 <div className="bg-white p-4 rounded-lg inline-block mb-6">
@@ -500,7 +661,7 @@ export default function SonicGiftPage() {
                   Transaction Successful
                 </h3>
                 <p className="text-gray-400 text-center mb-4">
-                  Your gift of {sentAmount} $SONIC has been sent successfully!
+                  Your gift of {sentAmount} $SOL has been sent successfully!
                 </p>
 
                 <div className="bg-gray-700 p-3 rounded-lg mb-4">

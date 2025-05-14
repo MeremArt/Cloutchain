@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Nunito, Orbitron, Montserrat } from "next/font/google";
 import "./globals.css";
+import AppWalletProvider from "./wallet/AppWalletProvider";
 // import ContextProvider from "@/context";
 // import AppCivicAuthProvider from "./wallet/AppWalletProvider";
 
@@ -60,7 +61,7 @@ export default function RootLayout({
         className={`${nunito.className} ${orbitron.className}  ${montserrat.className} antialiased`}
       >
         <CivicAuthProvider clientId={CIVIC_CLIENT_ID}>
-          {children}
+          <AppWalletProvider>{children}</AppWalletProvider>
         </CivicAuthProvider>
       </body>
     </html>

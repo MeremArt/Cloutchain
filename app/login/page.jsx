@@ -30,7 +30,6 @@ export default function Login() {
 
   // Handle Civic Auth logic
   useEffect(() => {
-    // If user is authenticated with Civic
     // eslint-disable-next-line
     if (user && userHasWallet(user)) {
       // Store user data from Civic Auth
@@ -48,8 +47,7 @@ export default function Login() {
       // Store login method in localStorage
       localStorage.setItem("loginMethod", "civic");
 
-      // User is authenticated with a wallet, redirect to dashboard
-      router.push("/dashboard/profile");
+      router.push("/dashboard");
       // eslint-disable-next-line
     } else if (user && !userHasWallet(user)) {
       // User is authenticated but doesn't have a wallet, create one
@@ -65,7 +63,7 @@ export default function Login() {
           // Store login method in localStorage
           localStorage.setItem("loginMethod", "civic");
 
-          router.push("/dashboard/profile");
+          router.push("/dashboard");
         } catch (error) {
           console.error("Error creating wallet:", error);
           setCivicButtonClicked(false);

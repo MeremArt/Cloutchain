@@ -22,15 +22,15 @@ export interface HeaderProps {
 }
 
 export interface BalanceData {
-  phoneNumber: string;
-  walletAddress: string;
   balances: {
     sol: number;
-    sonic: number;
   };
-  tokenAccount: {
-    address: string;
-    exists: boolean;
+  // Optional fields for compatibility with existing code
+  phoneNumber?: string;
+  walletAddress?: string;
+  tokenAccount?: {
+    address?: string;
+    exists?: boolean;
   };
 }
 

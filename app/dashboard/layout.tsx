@@ -41,12 +41,6 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { icon: Home, label: "Dashboard", href: "/dashboard" },
     { icon: User, label: "Profile", href: "/dashboard/profile" },
     { icon: Wallet, label: "Wallet", href: "/dashboard/withdraw" },
-    // { icon: Twitter, label: "twiiter", href: "/dashboard/twitter" },
-
-    // { icon: CreditCard, label: "Card", href: "/dashboard/submit" },
-    // { icon: LinkIcon, label: "Referrals", href: "/dashboard/referrals" },
-    // { icon: Tag, label: "Tx pool", href: "/dashboard/pool" },
-    // { icon: BarChart, label: "History", href: "/dashboard/history" },
   ];
 
   const getMenuItems = () => {
