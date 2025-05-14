@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface NewsItem {
   urlToImage: any;
   id: number | string;

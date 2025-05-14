@@ -18,7 +18,7 @@ import {
   RefreshCw,
   AlertTriangle,
 } from "lucide-react";
-import { NewsItem, TrendingPost, Creator } from "../interface/news.interface";
+import { NewsItem } from "../interface/news.interface";
 
 const SocialMediaTrends = () => {
   const [loading, setLoading] = useState(false);

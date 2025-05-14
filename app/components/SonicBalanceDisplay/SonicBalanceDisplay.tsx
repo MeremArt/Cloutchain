@@ -46,7 +46,7 @@ const SonicBalanceDisplay = ({
           <div className="text-gray-400 mt-1">
             ≈ ₦
             {balanceData
-              ? calculateNGNValue(balanceData.balances.sonic).toLocaleString()
+              ? calculateNGNValue(balanceData.balances.sol).toLocaleString()
               : "0.00"}
           </div>
         </div>
@@ -57,7 +57,7 @@ const SonicBalanceDisplay = ({
             <div className="text-lg font-medium text-white">
               $
               {balanceData
-                ? (balanceData.balances.sonic * sonicToUsdRate).toFixed(2)
+                ? (balanceData.balances.sol * sonicToUsdRate).toFixed(2)
                 : "0.00"}
             </div>
           </div>

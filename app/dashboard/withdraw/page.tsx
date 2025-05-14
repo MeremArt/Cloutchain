@@ -250,7 +250,7 @@ const WithdrawalPage = () => {
         await fetchBalance();
 
         // Compare old and new balances
-        const newBalance = balanceData?.balances.sonic || 0;
+        const newBalance = balanceData?.balances.sol || 0;
 
         if (newBalance < initialBalance) {
           // Balance decreased, transaction likely succeeded
@@ -430,8 +430,8 @@ const WithdrawalPage = () => {
   };
 
   const handleMaxAmount = () => {
-    if (balanceData && balanceData.balances.sonic > 0) {
-      setAmount(balanceData.balances.sonic.toString());
+    if (balanceData && balanceData.balances.sol > 0) {
+      setAmount(balanceData.balances.sol.toString());
     }
   };
 
@@ -462,7 +462,7 @@ const WithdrawalPage = () => {
       return false;
     }
 
-    if (!balanceData || amountValue > balanceData.balances.sonic) {
+    if (!balanceData || amountValue > balanceData.balances.sol) {
       toast.error("Insufficient balance");
       return false;
     }
