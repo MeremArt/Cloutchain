@@ -18,7 +18,6 @@ import {
   RefreshCw,
   AlertTriangle,
 } from "lucide-react";
-import { NewsItem } from "../interface/news.interface";
 
 const SocialMediaTrends = () => {
   const [loading, setLoading] = useState(false);
@@ -27,7 +26,19 @@ const SocialMediaTrends = () => {
   const [lastUpdated, setLastUpdated] = useState(
     new Date().toLocaleTimeString()
   );
-  const [newsData, setNewsData] = useState<NewsItem[]>([]);
+  const [newsData, setNewsData] = useState<
+    {
+      id: number;
+      source: string;
+      title: string;
+      summary: string;
+      url: string;
+      publishedAt: string;
+      category: string;
+      author: string;
+      urlToImage: string | null;
+    }[]
+  >([]);
 
   // Define trending content data
   const trendingContent = [
@@ -142,16 +153,16 @@ const SocialMediaTrends = () => {
     }
   };
 
-  // Fetch news from NewsAPI
+  // Fetch news from GNews API
   const fetchNewsData = useCallback(async () => {
     setLoadingNews(true);
     setError(null);
-    const API_KEY = process.env.NEXT_PUBLIC_NEWS_ORG_API;
+    const API_KEY = "67f23d27358c731631eadc156864092e"; // GNews API key
 
     try {
-      // Fetch news related to social media and content creation
+      // Fetch news related to social media and content creation using GNews API
       const response = await fetch(
-        `https://newsapi.org/v2/everything?q=social+media+OR+content+creation+OR+influencer+OR+digital+marketing&sortBy=publishedAt&language=en&pageSize=4&apiKey=${API_KEY}`
+        `https://gnews.io/api/v4/search?q=social%20media%20content%20creation&apikey=${API_KEY}&lang=en&max=4`
       );
 
       if (!response.ok) {
@@ -160,22 +171,33 @@ const SocialMediaTrends = () => {
 
       const data = await response.json();
 
-      if (data.status !== "ok") {
-        throw new Error(data.message || "Failed to fetch news data");
+      // Check if the response has articles
+      if (!data.articles || data.articles.length === 0) {
+        throw new Error("No news data found or empty response");
       }
 
       // Transform the news articles into our format
       const transformedNews = data.articles.map(
-        (article: any, index: number) => ({
+        (
+          article: {
+            source: { name: any };
+            title: any;
+            description: any;
+            url: any;
+            publishedAt: any;
+            image: any;
+          },
+          index: number
+        ) => ({
           id: index + 1,
-          source: article.source.name || "News Source",
+          source: article.source?.name || "News Source",
           title: article.title || "Trending Article",
           summary: article.description || "Click to read the full story.",
           url: article.url || "#",
           publishedAt: article.publishedAt || new Date().toISOString(),
           category: assignCategory(article.title || ""),
-          author: article.author || "Unknown",
-          urlToImage: article.urlToImage || null,
+          author: article.source?.name || "Unknown",
+          urlToImage: article.image || null,
         })
       );
 
@@ -184,12 +206,10 @@ const SocialMediaTrends = () => {
     } catch (error) {
       console.error("Error fetching news:", error);
       setError("Failed to load news data. Please try again later.");
-
-      // No fallback data - we'll show the error message
     } finally {
       setLoadingNews(false);
     }
-  }, []); // Add empty dependency array here
+  }, []);
 
   useEffect(() => {
     fetchNewsData();
