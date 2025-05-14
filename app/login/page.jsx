@@ -301,7 +301,7 @@ export default function Login() {
                   <input
                     type="text"
                     name="tiktokUsername"
-                    placeholder="Enter your TikTok username"
+                    placeholder="Enter your Social ID "
                     value={formData.tiktokUsername}
                     onChange={handleInputChange}
                     className="w-full p-3 pl-12 border font-montserrat text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
