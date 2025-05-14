@@ -153,7 +153,7 @@ export default function SolanaGiftPage() {
 
               setUserData({
                 id: userData.id || recipientId.substring(0, 8),
-                tiktokUsername: userData.tiktokUsername || "Cloutchain User",
+                tiktokUsername: userData.tiktokUsername || "Solana User",
                 walletAddress: recipientId,
                 email: userData.email || "",
               });
@@ -163,7 +163,7 @@ export default function SolanaGiftPage() {
 
               setUserData({
                 id: recipientId.substring(0, 8),
-                tiktokUsername: "Solana User",
+                tiktokUsername: "CLoutchain User",
                 walletAddress: recipientId,
                 email: "",
               });
