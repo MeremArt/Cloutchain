@@ -315,6 +315,7 @@ export default function ProfilePage() {
                 <div className="flex items-start space-x-6">
                   <div className="w-20 h-20 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
                     {user?.picture ? (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={user.picture}
                         alt="Profile"

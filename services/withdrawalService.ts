@@ -5,27 +5,75 @@ import {
   PublicKey,
   Transaction,
   SystemProgram,
+  TransactionSignature,
 } from "@solana/web3.js";
 
-const SOLANA_RPC_URL =
+// Define interfaces for the types
+interface UserData {
+  tiktokUsername?: string;
+  walletAddress?: string;
+  email?: string;
+  id?: string;
+}
+
+interface BankDetails {
+  accountName: string;
+  accountNumber: string;
+  bankName: string;
+}
+
+interface BalanceData {
+  balances: {
+    sol: number;
+    [key: string]: number;
+  };
+}
+
+interface WithdrawalResponse {
+  reference: string;
+  status: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
+}
+
+interface ProcessWalletWithdrawalParams {
+  amount: string;
+  userData: UserData;
+  publicKey: PublicKey;
+  signTransaction: (transaction: Transaction) => Promise<Transaction>;
+}
+
+interface ProcessBankWithdrawalParams {
+  amount: string;
+  userData: UserData;
+  bankDetails: BankDetails;
+}
+
+interface ValidateWithdrawalParams {
+  amount: string;
+  balanceData: BalanceData | null;
+  selectedMethod: string | null;
+  bankDetails: BankDetails;
+  connected: boolean;
+  minWithdrawal: number;
+  minWithdrawalNgn: number;
+}
+
+const SOLANA_RPC_URL: string =
   process.env.SOLANA_RPC_URL ||
   "https://dry-misty-surf.solana-mainnet.quiknode.pro/3f5a226933e73f33db5ce840c220268713b4419f";
 
 /**
  * Processes a wallet withdrawal using Solana
- * @param {Object} params - The parameters for processing the withdrawal
- * @param {string} params.amount - The amount to withdraw
- * @param {Object} params.userData - User data containing wallet address
- * @param {Object} params.publicKey - The public key of the connected wallet
- * @param {Function} params.signTransaction - Function to sign a transaction
- * @returns {Promise<string>} - Transaction signature
+ * @param params - The parameters for processing the withdrawal
+ * @returns Transaction signature
  */
 export const processWalletWithdrawal = async ({
   amount,
   userData,
   publicKey,
   signTransaction,
-}) => {
+}: ProcessWalletWithdrawalParams): Promise<string> => {
   if (!publicKey || !signTransaction) {
     throw new Error("Wallet is not properly connected");
   }
@@ -34,7 +82,7 @@ export const processWalletWithdrawal = async ({
     throw new Error("Destination wallet address not available");
   }
 
-  const amountValue = parseFloat(amount);
+  const amountValue: number = parseFloat(amount);
   if (isNaN(amountValue) || amountValue <= 0) {
     throw new Error("Please enter a valid amount");
   }
@@ -47,11 +95,11 @@ export const processWalletWithdrawal = async ({
   const connection = new Connection(SOLANA_RPC_URL);
 
   // Convert amount to lamports (SOL uses 9 decimals)
-  const lamports = Math.floor(amountValue * Math.pow(10, 9));
+  const lamports: number = Math.floor(amountValue * Math.pow(10, 9));
 
   // Create a simple native SOL transfer instruction
-  const senderPublicKey = publicKey;
-  const recipientPublicKey = new PublicKey(userData.walletAddress);
+  const senderPublicKey: PublicKey = publicKey;
+  const recipientPublicKey: PublicKey = new PublicKey(userData.walletAddress);
 
   // For native SOL transfers, use SystemProgram.transfer
   const transferInstruction = SystemProgram.transfer({
@@ -70,7 +118,7 @@ export const processWalletWithdrawal = async ({
 
   // Sign and send transaction
   const signedTransaction = await signTransaction(transaction);
-  const signature = await connection.sendRawTransaction(
+  const signature: TransactionSignature = await connection.sendRawTransaction(
     signedTransaction.serialize()
   );
 
@@ -86,7 +134,7 @@ export const processWalletWithdrawal = async ({
       transactionId: signature,
     };
 
-    const authToken =
+    const authToken: string | null =
       localStorage.getItem("jwt") || localStorage.getItem("token");
 
     await fetch(API_ENDPOINTS.WITHDRAWALS.WALLET, {
@@ -107,26 +155,14 @@ export const processWalletWithdrawal = async ({
 
 /**
  * Processes a bank withdrawal request
- * @param {Object} params - Parameters for the bank withdrawal
- * @param {string} params.amount - Amount to withdraw
- * @param {Object} params.userData - User data containing tiktokUsername
- * @param {Object} params.bankDetails - Bank account details for withdrawal
- * @returns {Promise<Object>} - Response data with reference
+ * @param params - Parameters for the bank withdrawal
+ * @returns Response data with reference
  */
-interface UserData {
-  tiktokUsername: string;
-  [key: string]: any; // Add this if userData may have additional properties
-}
-
 export const processBankWithdrawal = async ({
   amount,
   userData,
   bankDetails,
-}: {
-  amount: string;
-  userData: UserData;
-  bankDetails: object;
-}): Promise<object> => {
+}: ProcessBankWithdrawalParams): Promise<WithdrawalResponse> => {
   // Prepare request data for bank withdrawal
   const withdrawalData = {
     tiktokUsername: userData?.tiktokUsername,
@@ -138,7 +174,7 @@ export const processBankWithdrawal = async ({
   console.log("API endpoint:", API_ENDPOINTS.WITHDRAWALS.BANK);
 
   // Get auth token
-  const authToken =
+  const authToken: string | null =
     localStorage.getItem("jwt") || localStorage.getItem("token");
 
   // Make API call to bank withdrawal endpoint
@@ -163,27 +199,27 @@ export const processBankWithdrawal = async ({
     }
   }
 
-  return await response.json();
+  return (await response.json()) as WithdrawalResponse;
 };
 
 /**
  * Calculate the NGN value from SONIC amount
- * @param {number} sonicAmount - Amount in SONIC
- * @param {number} sonicToNgnRate - Conversion rate from SONIC to NGN
- * @returns {number} - Value in NGN
+ * @param sonicAmount - Amount in SONIC
+ * @param sonicToNgnRate - Conversion rate from SONIC to NGN
+ * @returns Value in NGN
  */
 export const calculateNGNValue = (
   sonicAmount: number,
   sonicToNgnRate: number
-) => {
+): number => {
   return sonicAmount * sonicToNgnRate;
 };
 
 /**
  * Calculate fee amount based on SONIC amount
- * @param {number} sonicAmount - Amount in SONIC
- * @param {number} feePercent - Fee percentage
- * @returns {number} - Fee amount in SONIC
+ * @param sonicAmount - Amount in SONIC
+ * @param feePercent - Fee percentage
+ * @returns Fee amount in SONIC
  */
 export const calculateFee = (
   sonicAmount: number,
@@ -194,36 +230,23 @@ export const calculateFee = (
 
 /**
  * Calculate net amount after fees
- * @param {number} sonicAmount - Amount in SONIC
- * @param {number} feePercent - Fee percentage
- * @returns {number} - Net amount in SONIC after fees
+ * @param sonicAmount - Amount in SONIC
+ * @param feePercent - Fee percentage
+ * @returns Net amount in SONIC after fees
  */
 export const calculateNetAmount = (
   sonicAmount: number,
   feePercent: number
 ): number => {
-  const fee = calculateFee(sonicAmount, feePercent);
+  const fee: number = calculateFee(sonicAmount, feePercent);
   return sonicAmount - fee;
 };
 
 /**
  * Validates a withdrawal request
- * @param {Object} params - Parameters for validation
- * @param {string} params.amount - Amount to withdraw
- * @param {Object} params.balanceData - User's balance data
- * @param {string} params.selectedMethod - Selected withdrawal method
- * @param {Object} params.bankDetails - Bank details if bank transfer selected
- * @param {boolean} params.connected - Wallet connection status if wallet transfer selected
- * @param {number} params.minWithdrawal - Minimum withdrawal amount
- * @param {number} params.minWithdrawalNgn - Minimum withdrawal amount in NGN
- * @returns {boolean} - Whether the withdrawal is valid
+ * @param params - Parameters for validation
+ * @returns Whether the withdrawal is valid
  */
-interface BankDetails {
-  accountName: string;
-  accountNumber: string;
-  bankName: string;
-}
-
 export const validateWithdrawal = ({
   amount,
   balanceData,
@@ -232,16 +255,8 @@ export const validateWithdrawal = ({
   connected,
   minWithdrawal,
   minWithdrawalNgn,
-}: {
-  amount: string;
-  balanceData: object;
-  selectedMethod: string;
-  bankDetails: BankDetails;
-  connected: boolean;
-  minWithdrawal: number;
-  minWithdrawalNgn: number;
-}): boolean => {
-  const amountValue = parseFloat(amount);
+}: ValidateWithdrawalParams): boolean => {
+  const amountValue: number = parseFloat(amount);
 
   if (!amountValue || isNaN(amountValue)) {
     toast.error("Please enter a valid amount");

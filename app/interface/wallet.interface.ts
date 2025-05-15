@@ -1,12 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // app/interface/wallet.interface.ts
 
-import {
-  Connection,
-  PublicKey,
-  Transaction,
-  VersionedTransaction,
-} from "@solana/web3.js";
+import { PublicKey, Transaction, VersionedTransaction } from "@solana/web3.js";
 import { UserData } from "./user.interface";
 
 // This interface needs to match what comes from @solana/wallet-adapter-react

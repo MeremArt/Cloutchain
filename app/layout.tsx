@@ -5,7 +5,6 @@ import AppWalletProvider from "./wallet/AppWalletProvider";
 // import ContextProvider from "@/context";
 // import AppCivicAuthProvider from "./wallet/AppWalletProvider";
 
-import { CivicAuthProvider } from "@civic/auth-web3/react";
 const nunito = Nunito({
   subsets: ["latin"],
   weight: ["200", "300", "400", "500", "600", "700", "800", "900"],

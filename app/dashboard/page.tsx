@@ -344,6 +344,7 @@ const SocialMediaTrends = () => {
                             <Video className="h-4 w-4 text-blue-400" />
                           )}
                           {post.mediaType === "image" && (
+                            // eslint-disable-next-line jsx-a11y/alt-text
                             <Image className="h-4 w-4 text-purple-400" />
                           )}
                           {post.mediaType === "audio" && (
