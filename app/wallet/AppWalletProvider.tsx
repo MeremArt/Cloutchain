@@ -12,7 +12,7 @@ import {
   SolflareWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import { BackpackWalletAdapter } from "@solana/wallet-adapter-backpack";
-
+import { CivicAuthProvider } from "@civic/auth-web3/react";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 require("@solana/wallet-adapter-react-ui/styles.css");
 
@@ -37,11 +37,15 @@ export default function AppWalletProvider({
     ],
     []
   );
-
+  const CIVIC_CLIENT_ID = process.env.NEXT_PUBLIC_CIVIC_CLIENT_ID || "";
   return (
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>{children}</WalletModalProvider>
+        <WalletModalProvider>
+          <CivicAuthProvider clientId={CIVIC_CLIENT_ID}>
+            {children}
+          </CivicAuthProvider>
+        </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
   );

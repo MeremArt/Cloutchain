@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Wallet,
   DollarSign,
@@ -18,6 +19,13 @@ import { API_ENDPOINTS } from "../../../config/api";
 import { HermesClient } from "@pythnetwork/hermes-client";
 import { UserData } from "@/app/interface/user.interface";
 import { WithdrawalMethod } from "@/app/interface/user.interface";
+import {
+  Connection,
+  PublicKey,
+  Transaction,
+  SystemProgram,
+} from "@solana/web3.js";
+
 import { BalanceData } from "@/app/interface/user.interface";
 import SonicBalanceDisplay from "@/app/components/SonicBalanceDisplay/SonicBalanceDisplay";
 //  price feed ID when available
@@ -48,7 +56,7 @@ const WithdrawalPage = () => {
   const [sonicPrice, setSonicPrice] = useState(0.33); // Default fallback price
   const [priceTimestamp, setPriceTimestamp] = useState<Date | null>(null);
   const [isLoadingPrice, setIsLoadingPrice] = useState(false);
-  const [usdToNgnRate, setUsdToNgnRate] = useState(1475);
+  const [usdToNgnRate, setUsdToNgnRate] = useState(1575);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const { initiateDeepLink } = useWalletDeepLink();
@@ -64,12 +72,77 @@ const WithdrawalPage = () => {
     "civic" | "traditional" | null
   >(null);
   // Min and max withdrawal
-  const MIN_WITHDRAWAL = 5; // 10 SONIC
+  const MIN_WITHDRAWAL = 0.0001; // 0.0001 SOL
   const MIN_WITHDRAWAL_NGN = MIN_WITHDRAWAL * SONIC_TO_NGN_RATE;
 
   // Withdrawal Fee
   const WITHDRAWAL_FEE_PERCENT = 0.1; // 1.5%
+  const profileData = useMemo(() => {
+    return loginMethod === "civic"
+      ? {
+          email: user?.email || "No email available",
+          walletAddress: solana?.address || "",
+          tiktokUsername: userData?.tiktokUsername || user?.username || "", // Try to use username from Civic if available
+          id: user?.id || "",
+        }
+      : {
+          email: userData?.email || "No email available",
+          walletAddress: userData?.walletAddress || "",
+          tiktokUsername: userData?.tiktokUsername || "",
+          id: userData?.id || "",
+        };
+  }, [
+    loginMethod,
+    user?.email,
+    user?.id,
+    user?.username,
+    solana?.address,
+    userData,
+  ]);
+  useEffect(() => {
+    // Get user data from localStorage
+    const storedData = localStorage.getItem("userData");
+    if (storedData) {
+      setUserData(JSON.parse(storedData));
+    }
 
+    // Determine login method from localStorage
+    const storedLoginMethod = localStorage.getItem("loginMethod");
+    if (storedLoginMethod === "civic") {
+      setLoginMethod("civic");
+    } else if (localStorage.getItem("jwt")) {
+      setLoginMethod("traditional");
+    } else if (user && solana?.address) {
+      // Fallback detection if localStorage method isn't set
+      setLoginMethod("civic");
+      // Store for future reference
+      localStorage.setItem("loginMethod", "civic");
+    }
+  }, [user, solana?.address]);
+
+  // Handle Civic user data storage - separate effect to avoid circular dependencies
+  useEffect(() => {
+    // Only run this logic when we have confirmed Civic login and user data
+    if (loginMethod === "civic" && user && solana?.address) {
+      // Check if we need to update stored data
+      const shouldUpdateStorage =
+        !userData ||
+        !userData.tiktokUsername ||
+        userData.walletAddress !== solana.address;
+
+      if (shouldUpdateStorage) {
+        const civicUserData = {
+          id: user.id || "",
+          email: user.email || "",
+          tiktokUsername: user.username || user.email?.split("@")[0] || "", // Use username or first part of email
+          walletAddress: solana?.address || "",
+        };
+
+        localStorage.setItem("userData", JSON.stringify(civicUserData));
+        setUserData(civicUserData);
+      }
+    }
+  }, [loginMethod, user, solana?.address, userData]);
   const withdrawalMethods: WithdrawalMethod[] = [
     {
       id: "bank",
@@ -137,95 +210,151 @@ const WithdrawalPage = () => {
     if (!validateWithdrawal()) return;
     setShowConfirmation(true);
   };
+  const SOLANA_RPC_URL =
+    process.env.SOLANA_RPC_URL ||
+    "https://dry-misty-surf.solana-mainnet.quiknode.pro/3f5a226933e73f33db5ce840c220268713b4419f";
 
-  const processWithdrawal = async () => {
-    if (!validateWithdrawal()) return;
-    const initialBalance = balanceData?.balances.sol || 0;
-    setIsProcessing(true);
+  const processWalletWithdrawal = async () => {
+    if (!connected || !publicKey || !signTransaction) {
+      throw new Error("Wallet is not properly connected");
+    }
+
+    if (!userData?.walletAddress) {
+      throw new Error("Destination wallet address not available");
+    }
+
+    const amountValue = parseFloat(amount);
+    if (isNaN(amountValue) || amountValue <= 0) {
+      throw new Error("Please enter a valid amount");
+    }
+
+    // Create Solana connection
+    if (!SOLANA_RPC_URL) {
+      throw new Error("SOLANA_RPC_URL is not defined");
+    }
+
+    const connection = new Connection(SOLANA_RPC_URL);
+
+    // Convert amount to lamports (SOL uses 9 decimals)
+    const lamports = Math.floor(amountValue * Math.pow(10, 9));
+
+    // Create a simple native SOL transfer instruction
+    const senderPublicKey = publicKey;
+    const recipientPublicKey = new PublicKey(userData.walletAddress);
+
+    // For native SOL transfers, use SystemProgram.transfer
+    const transferInstruction = SystemProgram.transfer({
+      fromPubkey: senderPublicKey,
+      toPubkey: recipientPublicKey,
+      lamports: lamports,
+    });
+
+    // Create transaction and add the transfer instruction
+    const transaction = new Transaction().add(transferInstruction);
+
+    // Get recent blockhash
+    const { blockhash } = await connection.getLatestBlockhash();
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = senderPublicKey;
+
+    // Sign and send transaction
+    const signedTransaction = await signTransaction(transaction);
+    const signature = await connection.sendRawTransaction(
+      signedTransaction.serialize()
+    );
+
+    // Wait for confirmation
+    await connection.confirmTransaction(signature, "confirmed");
+
+    // Save transaction signature as reference
+    setWithdrawalReference(signature);
+    toast.success(`Successfully sent ${amount} SOL to your wallet!`);
+
+    // Additional API call to update backend records (if needed)
     try {
-      // Prepare request data
       const withdrawalData = {
         tiktokUsername: userData?.tiktokUsername,
         amount: parseFloat(amount),
+        destinationWallet: userData.walletAddress,
+        transactionId: signature,
       };
 
-      // Use the same token key for both methods
       const authToken =
         localStorage.getItem("jwt") || localStorage.getItem("token");
 
-      // Add different properties based on withdrawal method
-      if (selectedMethod === "bank") {
-        Object.assign(withdrawalData, {
-          bankDetails: bankDetails,
-        });
+      await fetch(API_ENDPOINTS.WITHDRAWALS.WALLET, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify(withdrawalData),
+      });
+    } catch (apiError) {
+      // If API call fails but transaction succeeded, just log the error
+      console.error("Error updating backend records:", apiError);
+    }
+  };
 
-        console.log("Sending bank withdrawal request:", withdrawalData);
-        console.log("API endpoint:", API_ENDPOINTS.WITHDRAWALS.BANK);
+  const processBankWithdrawal = async () => {
+    // Prepare request data for bank withdrawal
+    const withdrawalData = {
+      tiktokUsername: userData?.tiktokUsername,
+      amount: parseFloat(amount),
+      bankDetails: bankDetails,
+    };
 
-        // Make API call to bank withdrawal endpoint
-        const response = await fetch(API_ENDPOINTS.WITHDRAWALS.BANK, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify(withdrawalData),
-        });
+    console.log("Sending bank withdrawal request:", withdrawalData);
+    console.log("API endpoint:", API_ENDPOINTS.WITHDRAWALS.BANK);
 
-        if (!response.ok) {
-          const contentType = response.headers.get("content-type");
-          if (contentType && contentType.includes("application/json")) {
-            const errorData = await response.json();
-            throw new Error(
-              errorData.message || "Failed to process bank withdrawal"
-            );
-          } else {
-            const errorText = await response.text();
-            console.error("Non-JSON error response:", errorText);
-            throw new Error("Server error - received non-JSON response");
-          }
-        }
+    // Get auth token
+    const authToken =
+      localStorage.getItem("jwt") || localStorage.getItem("token");
 
-        const data = await response.json();
-        setWithdrawalReference(data.reference);
-      } else if (selectedMethod === "wallet" && publicKey) {
-        // For wallet withdrawal, use the connected wallet's public key
-        Object.assign(withdrawalData, {
-          destinationWallet: publicKey.toString(),
-        });
+    // Make API call to bank withdrawal endpoint
+    const response = await fetch(API_ENDPOINTS.WITHDRAWALS.BANK, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify(withdrawalData),
+    });
 
-        console.log("Sending wallet withdrawal request:", withdrawalData);
-        console.log("API endpoint:", API_ENDPOINTS.WITHDRAWALS.WALLET);
-
-        // Make API call to wallet withdrawal endpoint
-        const response = await fetch(API_ENDPOINTS.WITHDRAWALS.WALLET, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify(withdrawalData),
-        });
-
-        if (!response.ok) {
-          const contentType = response.headers.get("content-type");
-          if (contentType && contentType.includes("application/json")) {
-            const errorData = await response.json();
-            throw new Error(
-              errorData.message || "Failed to process wallet withdrawal"
-            );
-          } else {
-            const errorText = await response.text();
-            console.error("Non-JSON error response:", errorText);
-            throw new Error("Server error - received non-JSON response");
-          }
-        }
-
-        const data = await response.json();
-        setWithdrawalReference(data.transactionId);
+    if (!response.ok) {
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || "Failed to process bank withdrawal"
+        );
+      } else {
+        const errorText = await response.text();
+        console.error("Non-JSON error response:", errorText);
+        throw new Error("Server error - received non-JSON response");
       }
+    }
 
-      toast.success("Withdrawal request submitted successfully");
+    const data = await response.json();
+    setWithdrawalReference(data.reference);
+    toast.success("Bank withdrawal request submitted successfully");
+  };
+  const processWithdrawal = async () => {
+    if (!validateWithdrawal()) return;
+
+    // Track initial balance for verification
+    const initialBalance = balanceData?.balances.sol || 0;
+    setIsProcessing(true);
+
+    try {
+      // Handle different withdrawal methods
+      if (selectedMethod === "bank") {
+        // Process bank withdrawal through API
+        await processBankWithdrawal();
+      } else if (selectedMethod === "wallet" && publicKey) {
+        // Process wallet withdrawal using direct Solana transaction
+        await processWalletWithdrawal();
+      }
 
       // After successful withdrawal, reset form and fetch new balance
       setAmount("");
@@ -239,6 +368,7 @@ const WithdrawalPage = () => {
       fetchBalance();
     } catch (error) {
       console.error("Error processing withdrawal:", error);
+
       if (
         error instanceof Error &&
         error.message.includes("Transaction error")
@@ -263,11 +393,12 @@ const WithdrawalPage = () => {
           return;
         }
       }
+
+      toast.error(error instanceof Error ? error.message : "Withdrawal failed");
     } finally {
       setIsProcessing(false);
     }
   };
-
   // Fetch live Sonic price from Pyth Network
   // Fetch Sonic price from Pyth Network
   const fetchSonicPrice = useCallback(async () => {
@@ -342,31 +473,113 @@ const WithdrawalPage = () => {
       setIsLoadingPrice(false);
     }
   }, []);
-  const fetchBalance = useCallback(async () => {
-    if (!userData || !userData.tiktokUsername) {
-      toast.error("User data not available");
+  const fetchDirectSolanaBalance = useCallback(async () => {
+    if (!profileData.walletAddress) {
+      toast.error("Wallet address not available");
       return;
     }
 
     setIsLoadingBalance(true);
     try {
+      console.log("Fetching balance for wallet:", profileData.walletAddress);
+
+      // Use the correct endpoint from your API_ENDPOINTS configuration
       const response = await fetch(
-        `${API_ENDPOINTS.PROFILE.BALANCE}${userData.tiktokUsername}`
+        `${API_ENDPOINTS.WALLETS.GET_BALANCE}${profileData.walletAddress}`
       );
 
       if (!response.ok) {
-        throw new Error("Network response was not ok");
+        throw new Error(`Failed to fetch balance: ${response.status}`);
       }
 
-      const data: BalanceData = await response.json();
-      setBalanceData(data);
+      const data = await response.json();
+      console.log("Balance data received:", data);
+
+      // Set the balance data with the expected format
+      setBalanceData({
+        balances: {
+          sol: data.balance || 0,
+        },
+      });
+
+      toast.success("Balance updated");
     } catch (error) {
-      console.error("Error fetching balance:", error);
-      toast.error("Failed to fetch balance");
+      console.error("Error fetching Solana balance:", error);
+      toast.error("Failed to fetch wallet balance");
+
+      // Set a default balance to avoid UI issues
+      setBalanceData({
+        balances: {
+          sol: 0,
+        },
+      });
     } finally {
       setIsLoadingBalance(false);
     }
-  }, [userData]);
+  }, [profileData.walletAddress]);
+  const fetchTikTokBalance = useCallback(async () => {
+    if (!profileData.tiktokUsername) {
+      toast.error("TikTok username not available");
+      return;
+    }
+
+    setIsLoadingBalance(true);
+    try {
+      console.log(
+        "Fetching balance for TikTok username:",
+        profileData.tiktokUsername
+      );
+
+      const response = await fetch(
+        `${API_ENDPOINTS.PROFILE.BALANCE}${profileData.tiktokUsername}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch balance: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("TikTok balance data received:", data);
+
+      setBalanceData(data);
+      toast.success("Balance updated");
+    } catch (error) {
+      console.error("Error fetching balance:", error);
+      toast.error("Failed to fetch balance");
+
+      // Set a default balance to avoid UI issues
+      setBalanceData({
+        balances: {
+          sol: 0,
+        },
+      });
+    } finally {
+      setIsLoadingBalance(false);
+    }
+  }, [profileData.tiktokUsername]);
+  const fetchBalance = useCallback(async () => {
+    console.log("Fetch balance called. Login method:", loginMethod);
+    console.log("Wallet address:", userData?.walletAddress);
+    console.log("TikTok username:", userData?.tiktokUsername);
+
+    if (loginMethod === "civic" && userData?.walletAddress) {
+      await fetchDirectSolanaBalance();
+    } else if (userData?.tiktokUsername) {
+      await fetchTikTokBalance();
+    } else {
+      toast.error("No wallet address or TikTok username available");
+    }
+  }, [
+    loginMethod,
+    userData?.walletAddress,
+    userData?.tiktokUsername,
+    fetchDirectSolanaBalance,
+    fetchTikTokBalance,
+  ]);
+
+  // Implementation of fetchDirectSolanaBalance
+
+  // Implementation of fetchTikTokBalance
 
   const handleConnectWallet = () => {
     try {

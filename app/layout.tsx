@@ -54,15 +54,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const CIVIC_CLIENT_ID = process.env.NEXT_PUBLIC_CIVIC_CLIENT_ID || "";
+  // const CIVIC_CLIENT_ID = process.env.NEXT_PUBLIC_CIVIC_CLIENT_ID || "";
   return (
     <html lang="en">
       <body
         className={`${nunito.className} ${orbitron.className}  ${montserrat.className} antialiased`}
       >
-        <CivicAuthProvider clientId={CIVIC_CLIENT_ID}>
-          <AppWalletProvider>{children}</AppWalletProvider>
-        </CivicAuthProvider>
+        <AppWalletProvider>{children}</AppWalletProvider>
       </body>
     </html>
   );
