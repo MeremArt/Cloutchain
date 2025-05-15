@@ -314,7 +314,15 @@ export default function ProfilePage() {
                 {/* Profile Header */}
                 <div className="flex items-start space-x-6">
                   <div className="w-20 h-20 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
-                    <User className="w-10 h-10 text-gray-400" />
+                    {user?.picture ? (
+                      <img
+                        src={user.picture}
+                        alt="Profile"
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    ) : (
+                      <User className="w-10 h-10 text-gray-500" />
+                    )}
                   </div>
                   <div>
                     <h2 className="text-xl font-semibold text-white">
