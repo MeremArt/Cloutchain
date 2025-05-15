@@ -48,7 +48,7 @@ const ConfirmWithdrawalModal = ({
           <div className="bg-gray-700 p-3 rounded-lg">
             <div className="flex justify-between mb-1">
               <span className="text-sm text-gray-400">Amount:</span>
-              <span className="text-white">{amount} $SONIC</span>
+              <span className="text-white">{amount} $SOL</span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-gray-400">Value:</span>
@@ -61,14 +61,14 @@ const ConfirmWithdrawalModal = ({
               <span className="text-sm text-gray-400">
                 Fee ({feePercent}%):
               </span>
-              <span className="text-white">{feeAmount.toFixed(2)} $SONIC</span>
+              <span className="text-white">{feeAmount.toFixed(2)} $SOL</span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-gray-400">
                 You&apos;ll receive:
               </span>
               <div className="text-right">
-                <div className="text-white">{netAmount.toFixed(2)} $SONIC</div>
+                <div className="text-white">{netAmount.toFixed(2)} $SOL</div>
                 <div className="text-xs text-gray-400">
                   ≈ ₦{netNGNValue.toLocaleString()}
                 </div>

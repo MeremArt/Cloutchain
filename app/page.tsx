@@ -126,7 +126,7 @@ const LandingPage: React.FC = () => {
       {/* Hero Section */}
       <div className="flex flex-col items-center text-center px-4 md:px-8 pt-8 md:pt-0 relative z-1">
         <h1 className="font-orbitron font-bold text-[36px] md:text-[64px] leading-[1.2] md:leading-[76.8px] text-[#f5f5f5] mb-4 tracking-[1.28px]">
-          Where <span className="text-[#fffd55]">Trends</span> become <br />{" "}
+          Where <span className="text-[#fffd55]">Clout</span> becomes <br />{" "}
           Tradable
         </h1>
         <p className="font-nunito font-normal text-[16px] md:text-[20px] leading-[1.6] md:leading-[36px] text-[#f5f5f5] mb-6">

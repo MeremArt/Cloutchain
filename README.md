@@ -5,19 +5,19 @@ CloutChain is a decentralized Web3 platform that empowers content creators—esp
 ## Key Features
 
 - **Tip‑Link Generation**
-  Each creator gets a unique vanity URL (`/@[handle]`) that fans visit to send `$SONIC` tips instantly ([GitHub][1]).
+  Each creator gets a unique vanity URL (`/@[handle]`) that fans visit to send `$SOL` tips instantly ([GitHub][1]).
 - **Traditional & Civic Auth**
   Supports email/password sign‑up plus seamless blockchain‑wallet auth via Civic Auth Web3, provisioning an embedded Solana wallet for each creator ([GitHub][1]).
 - **Instant On‑Chain Tipping**
   Fans can tip using Phantom, Solflare, or credit‑card on‑ramps powered by Crossmint/MoonPay, with real‑time notifications via Firebase ([GitHub][1]).
 - **Global Cash‑Out (Coming Soon)**
-  Withdraw `$SONIC` to local currency through integrated merchant systems (e.g., MoonPay, M‑Pesa), turning on‑chain earnings into spendable fiat ([GitHub][1]).
+  Withdraw `$SOL` to local currency through integrated merchant systems (e.g., MoonPay, M‑Pesa), turning on‑chain earnings into spendable fiat ([GitHub][1]).
 - **Direct Wallet Transfers**
   Move tokens between Solana wallets (ERC‑20‑style SPL transfers) using `@solana/web3.js` and `@solana/spl‑token` adapters ([GitHub][1]).
 - **Live‑Stream Overlays**
   Generate time‑sensitive QR codes and tip codes for live videos, refreshing every 15 minutes to secure transactions ([GitHub][1]).
 - **Treasury‑Backed Stability**
-  Built‑in buyback and burn mechanisms for `$SONIC` to maintain token value integrity ([GitHub][1]).
+  Built‑in buyback and burn mechanisms for `$SOL` to maintain token value integrity ([GitHub][1]).
 
 ## Tech Stack
 
