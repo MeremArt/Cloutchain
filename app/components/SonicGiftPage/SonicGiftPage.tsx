@@ -11,11 +11,13 @@ import Link from "next/link";
 import { API_ENDPOINTS } from "../../../config/api";
 
 import QRCode from "react-qr-code";
+
 import {
-  createTransferInstruction,
-  getAssociatedTokenAddress,
-} from "@solana/spl-token";
-import { Connection, PublicKey, Transaction } from "@solana/web3.js";
+  Connection,
+  PublicKey,
+  Transaction,
+  SystemProgram,
+} from "@solana/web3.js";
 import { UserData } from "@/app/interface/user.interface";
 
 interface BalanceData {
@@ -265,31 +267,19 @@ export default function SolanaGiftPage() {
       }
       const connection = new Connection(SOLANA_RPC_URL);
 
-      // Convert amount to lamports (or the token's smallest unit)
-      // Solana uses 9 decimals
-      const amountInSmallestUnit = amountValue * Math.pow(10, 9);
+      // Convert amount to lamports (SOL uses 9 decimals)
+      const lamports = Math.floor(amountValue * Math.pow(10, 9));
 
-      // Get sender and recipient token account addresses
+      // Create a simple native SOL transfer instruction
       const senderPublicKey = new PublicKey(publicKey);
       const recipientPublicKey = new PublicKey(userData.walletAddress);
 
-      const senderTokenAccount = await getAssociatedTokenAddress(
-        SOLANA_TOKEN_MINT,
-        senderPublicKey
-      );
-
-      const recipientTokenAccount = await getAssociatedTokenAddress(
-        SOLANA_TOKEN_MINT,
-        recipientPublicKey
-      );
-
-      // Create transfer instruction
-      const transferInstruction = createTransferInstruction(
-        senderTokenAccount,
-        recipientTokenAccount,
-        senderPublicKey,
-        BigInt(Math.floor(amountInSmallestUnit))
-      );
+      // For native SOL transfers, use SystemProgram.transfer instead of SPL token transfers
+      const transferInstruction = SystemProgram.transfer({
+        fromPubkey: senderPublicKey,
+        toPubkey: recipientPublicKey,
+        lamports: lamports,
+      });
 
       // Create transaction and add the transfer instruction
       const transaction = new Transaction().add(transferInstruction);
@@ -299,7 +289,7 @@ export default function SolanaGiftPage() {
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = senderPublicKey;
 
-      // Sign and send transaction using AppKit wallet provider
+      // Sign and send transaction
       if (!signTransaction) {
         throw new Error("Wallet does not support signing transactions");
       }
@@ -308,20 +298,20 @@ export default function SolanaGiftPage() {
         signedTransaction.serialize()
       );
 
-      // Wait for confirmation (optional)
+      // Wait for confirmation
       await connection.confirmTransaction(signature, "confirmed");
 
-      // Save transaction signature for reference
+      // Save transaction signature
       setTransactionSignature(signature);
 
       toast.success(
-        `Successfully sent ${amount} $SOL to ${userData.tiktokUsername}!`
+        `Successfully sent ${amount} SOL to ${userData.tiktokUsername}!`
       );
 
-      // Reset amount after successful send
+      // Reset amount
       setAmount("10");
 
-      // Refresh recipient's balance after sending
+      // Refresh recipient's balance
       if (recipientType === "username" && recipientId) {
         await fetchBalance(recipientId);
       } else if (userData.walletAddress) {
