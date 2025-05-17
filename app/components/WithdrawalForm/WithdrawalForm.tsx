@@ -52,6 +52,7 @@ const WithdrawalForm = ({
   const [withdrawalReference, setWithdrawalReference] = useState<string | null>(
     null
   );
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [dropdownVisible, setDropdownVisible] = useState(false);
 
   interface WithdrawalMethod {

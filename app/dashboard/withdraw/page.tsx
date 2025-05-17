@@ -29,6 +29,7 @@ const WithdrawalPage = () => {
   const [isLoadingPrice, setIsLoadingPrice] = useState(false);
   const [usdToNgnRate, setUsdToNgnRate] = useState(1575);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { publicKey, connected, wallet, signTransaction } = useWallet();
   const { initiateDeepLink } = useWalletDeepLink();
   const userContext = useUser();
