@@ -3,7 +3,14 @@ import { motion } from "framer-motion";
 
 export default function CognitoLoginButton() {
   const [isLoading, setIsLoading] = useState(false);
-  const [debugInfo, setDebugInfo] = useState(null);
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [debugInfo, setDebugInfo] = useState<{
+    domain: string | undefined;
+    clientId: string | undefined;
+    redirectUri: string | undefined;
+    hasAllVars: boolean;
+  } | null>(null);
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);

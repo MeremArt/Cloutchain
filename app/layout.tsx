@@ -3,7 +3,7 @@ import "./globals.css";
 import { Nunito, Orbitron, Montserrat } from "next/font/google";
 
 import AppWalletProvider from "./wallet/AppWalletProvider";
-import AppAmplifyProvider from "./provider/AppAmplifyProvider";
+// import AppAmplifyProvider from "./provider/AppAmplifyProvider";
 const nunito = Nunito({
   subsets: ["latin"],
   weight: ["200", "300", "400", "500", "600", "700", "800", "900"],

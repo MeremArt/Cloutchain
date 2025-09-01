@@ -12,7 +12,7 @@ export default function AppAmplifyProvider({
 }) {
   useEffect(() => {
     // Ensure Amplify is configured only in the client
-    Amplify.configure({ ...awsExports, ssr: false });
+    Amplify.configure({ ...awsExports });
   }, []);
 
   return <>{children}</>;
