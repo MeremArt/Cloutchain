@@ -1,0 +1,20 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-cloutchain-dev-7ee72-authRole",
+      "UnauthRoleArn": "arn:aws:iam::766957562446:role/amplify-cloutchain-dev-7ee72-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::766957562446:role/amplify-cloutchain-dev-7ee72-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-cloutchain-dev-7ee72-deployment",
+      "UnauthRoleName": "amplify-cloutchain-dev-7ee72-unauthRole",
+      "StackName": "amplify-cloutchain-dev-7ee72",
+      "StackId": "arn:aws:cloudformation:us-east-1:766957562446:stack/amplify-cloutchain-dev-7ee72/b2438ff0-8724-11f0-9273-0afff1d070bb",
+      "AmplifyAppId": "d31wzwwtrmznqm"
+    },
+    "categories": {
+      "auth": {
+        "cloutchain912e031e": {}
+      }
+    }
+  }
+}

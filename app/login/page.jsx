@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import CognitoLoginButton from "../components/CognitoLoginButton/CognitoLoginButton";
 import axios from "axios";
 
 import toast, { Toaster } from "react-hot-toast";
@@ -249,6 +250,9 @@ export default function Login() {
                   ? "Connecting..."
                   : "Sign in with Civic Auth"}
               </motion.button>
+
+              {/* Aws cognito sign in button */}
+              <CognitoLoginButton />
 
               {/* Hidden original UserButton */}
               <div className="hidden">

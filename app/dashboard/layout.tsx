@@ -98,6 +98,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   };
 
   const handleMenuClick = (href: string) => {
+    // Clear local storage
+    localStorage.clear();
+
     if (pathname === href) {
       toast("You are already here!", {
         icon: "👋",
